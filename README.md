@@ -14,7 +14,7 @@ RupuData provides **technical signals, not legal certification.**
 
 ## Status
 
-`0.4.2` — intentionally small, useful per release.
+`0.4.3` — intentionally small, useful per release.
 
 What works today:
 
@@ -71,7 +71,9 @@ rupudata benchmark-check train.jsonl --benchmark gsm8k --reference /path/to/gsm8
 
 Status is `OVERLAP_DETECTED` or `NO_OVERLAP_DETECTED` under the matching methodology — **not** a claim that a model is contaminated.
 
-Benchmarks are pluggable via a `BenchmarkAdapter` interface (`load_reference`, `comparable_fields`). Only **GSM8K** is registered today.
+Benchmarks are pluggable via a `BenchmarkAdapter` interface (`load_reference`, `candidate_fields`). Only **GSM8K** is registered today.
+
+Matching uses **text extraction**, not full-record comparison: one comparison text per record via `first_non_empty` over `candidate_fields` (`question`, `problem`, `prompt`, `text`). Remaining fields are ignored. Evidence includes the selected `field`.
 
 ## Technical audit contract
 

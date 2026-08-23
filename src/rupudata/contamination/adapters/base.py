@@ -25,8 +25,8 @@ class BenchmarkAdapter(Protocol):
     description: str
     notes: tuple[str, ...]
 
-    def comparable_fields(self) -> list[str]:
-        """Ordered field names used to extract comparable text from records."""
+    def candidate_fields(self) -> list[str]:
+        """Ordered candidate field names for text extraction (first_non_empty)."""
 
     def load_reference(self, reference: Path | None = None) -> ReferenceLoad:
         """Load packaged sample or user-supplied reference dataset."""

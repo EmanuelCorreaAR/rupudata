@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.4.3] - 2026-08-23
+
+### Changed
+- Benchmark method uses `text_extraction` (`strategy`, `candidate_fields`); `comparable_fields` kept as a deprecated alias
+
 ## [0.4.2] - 2026-08-23
 ### Added
 - Benchmark-check match evidence: per-pair `dataset_record`, `reference_record`, and `field` (0-based rows)

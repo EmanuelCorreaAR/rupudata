@@ -42,7 +42,11 @@ def extract_comparable(
     record: dict[str, Any],
     fields: Sequence[str],
 ) -> tuple[str, str] | None:
-    """Return (field_name, raw_text) for the first non-empty field."""
+    """Return (field_name, raw_text) for ``first_non_empty`` text extraction.
+
+    Only one comparison text is selected per record. Remaining candidate
+    fields are ignored even if they contain different content.
+    """
     for key in fields:
         value = record.get(key)
         if value is not None and str(value).strip():

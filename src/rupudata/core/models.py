@@ -246,16 +246,30 @@ class BenchmarkConfiguration(BaseModel):
     match_near_duplicate: bool = False
 
 
-class BenchmarkMethod(BaseModel):
-    comparable_fields: list[str] = Field(
+class TextExtractionSpec(BaseModel):
+    """How one comparison text is chosen per record before matching."""
+
+    strategy: str = "first_non_empty"
+    candidate_fields: list[str] = Field(
         default_factory=lambda: ["question", "problem", "prompt", "text"]
     )
-    field_selection: str = (
-        "first non-empty field in comparable_fields order, recorded per match"
+    unit: str = "one comparison text per record"
+
+
+class BenchmarkMethod(BaseModel):
+    text_extraction: TextExtractionSpec = Field(default_factory=TextExtractionSpec)
+    comparable_fields: list[str] = Field(
+        default_factory=lambda: ["question", "problem", "prompt", "text"],
+        description=(
+            "Deprecated alias of text_extraction.candidate_fields "
+            "(kept for consumers of 0.4.0–0.4.2)."
+        ),
     )
     row_index_base: int = 0
-    exact: str = "hash of comparable text without strip (record_exact_v1 on {text})"
-    normalized: str = "hash of comparable text with strip (record_normalized_v1 on {text})"
+    exact: str = "hash of extracted comparison text without strip (record_exact_v1 on {text})"
+    normalized: str = (
+        "hash of extracted comparison text with strip (record_normalized_v1 on {text})"
+    )
     near_duplicate: str = "disabled"
     record_exact: RecordExactSpec = Field(default_factory=RecordExactSpec)
     record_normalization: RecordNormalizationSpec = Field(

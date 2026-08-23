@@ -25,8 +25,12 @@ class Gsm8kAdapter:
     )
     packaged_sample = "gsm8k_sample.jsonl"
 
-    def comparable_fields(self) -> list[str]:
+    def candidate_fields(self) -> list[str]:
         return ["question", "problem", "prompt", "text"]
+
+    def comparable_fields(self) -> list[str]:
+        """Deprecated alias of ``candidate_fields``."""
+        return self.candidate_fields()
 
     def load_reference(self, reference: Path | None = None) -> ReferenceLoad:
         if reference is not None:

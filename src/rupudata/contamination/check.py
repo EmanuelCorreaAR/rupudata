@@ -22,6 +22,7 @@ from rupudata.core.models import (
     MatchEvidenceItem,
     RECORD_EXACT_V1,
     RECORD_NORMALIZATION_V1,
+    TextExtractionSpec,
 )
 from rupudata.core.normalization import fingerprint_dataframe
 from rupudata.core.reader import file_size_bytes, read_dataset
@@ -62,7 +63,7 @@ def check_benchmark(
 
     ref_path = Path(reference) if reference is not None else None
     loaded = adapter.load_reference(ref_path)
-    fields = adapter.comparable_fields()
+    fields = list(adapter.candidate_fields())
 
     exact_ds = index_rows(df, normalized=False, fields=fields)
     exact_ref = index_rows(loaded.frame, normalized=False, fields=fields)
@@ -80,12 +81,20 @@ def check_benchmark(
 
     notes = [
         "This report is a technical audit contract (input → configuration → method → result).",
+        "RupuData selects one comparison text per record using the first non-empty candidate field. It does not compare all fields in a record.",
+        "Pipeline: input → text extraction → exact/normalized matching → evidence → result.",
         "RupuData detected text overlap under the configured matching methodology — not a legal or scientific contamination verdict.",
         "Interpretation of whether overlap constitutes contamination depends on context.",
-        "result.matches lists concrete row pairs (0-based) and the field used on the dataset side.",
+        "result.matches lists concrete row pairs (0-based) and the candidate field selected on the dataset side.",
+        "method.comparable_fields is a deprecated alias of method.text_extraction.candidate_fields.",
         "Near-duplicate / paraphrase / translation matching is not included in this release.",
         *adapter.notes,
     ]
+
+    extraction = TextExtractionSpec(
+        strategy="first_non_empty",
+        candidate_fields=fields,
+    )
 
     return BenchmarkCheckReport(
         version=__version__,
@@ -105,9 +114,16 @@ def check_benchmark(
             match_near_duplicate=False,
         ),
         method=BenchmarkMethod(
+            text_extraction=extraction,
             comparable_fields=list(fields),
-            exact="hash of comparable text without strip (record_exact_v1 on {text})",
-            normalized="hash of comparable text with strip (record_normalized_v1 on {text})",
+            exact=(
+                "hash of extracted comparison text without strip "
+                "(record_exact_v1 on {text})"
+            ),
+            normalized=(
+                "hash of extracted comparison text with strip "
+                "(record_normalized_v1 on {text})"
+            ),
             near_duplicate="disabled",
             record_exact=RECORD_EXACT_V1,
             record_normalization=RECORD_NORMALIZATION_V1,
