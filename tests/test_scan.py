@@ -75,6 +75,7 @@ def test_scan_jsonl_writes_report(tmp_path: Path) -> None:
     payload = json.loads(out.read_text(encoding="utf-8"))
     assert payload["tool"] == "rupudata"
     assert payload["exact_duplicates"]["duplicate_records"] == 2
+    assert "near_duplicates" in payload
 
 
 def test_scan_parquet(tmp_path: Path) -> None:

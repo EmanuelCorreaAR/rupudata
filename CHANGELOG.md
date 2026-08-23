@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.0] - 2026-08-23
+
+### Added
+- Near-duplicate detection in `rupudata scan` (character shingles + Jaccard)
+- MinHash + LSH candidate generation for larger datasets (pairwise below 250 rows)
+- CLI flags: `--near-duplicate-threshold`, `--shingle-size`, `--num-perm`, `--skip-near-duplicates`
+- Example fixture `examples/near_dupes.jsonl`
+
 ## [0.2.0] - 2026-08-23
 
 ### Added
@@ -16,4 +24,3 @@
 - Exact duplicate detection with record normalization
 - Rich terminal report and machine-readable JSON output
 - Example fixture and test suite
-

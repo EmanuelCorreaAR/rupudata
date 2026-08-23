@@ -8,6 +8,7 @@ from typing import Optional
 import typer
 from rich.console import Console
 
+from rupudata.analyzers.near_duplicates import NearDuplicateConfig
 from rupudata.comparison.diff import compare_datasets
 from rupudata.core.scanner import scan_dataset
 from rupudata.reporters.json_report import write_json_report
@@ -31,10 +32,40 @@ def scan(
         "-o",
         help="Path for the JSON report (default: ./rupudata-report.json).",
     ),
+    near_duplicate_threshold: float = typer.Option(
+        0.85,
+        "--near-duplicate-threshold",
+        min=0.0,
+        max=1.0,
+        help="Jaccard threshold for near-duplicate pairs (character shingles).",
+    ),
+    shingle_size: int = typer.Option(
+        5,
+        "--shingle-size",
+        min=1,
+        help="Character shingle size for near-duplicate detection.",
+    ),
+    num_perm: int = typer.Option(
+        64,
+        "--num-perm",
+        min=4,
+        help="MinHash permutations (used when the dataset is large enough for LSH).",
+    ),
+    skip_near_duplicates: bool = typer.Option(
+        False,
+        "--skip-near-duplicates",
+        help="Skip near-duplicate analysis (faster on large files).",
+    ),
 ) -> None:
-    """Inspect a dataset: structure, fingerprint, and exact duplicates."""
+    """Inspect a dataset: structure, fingerprint, exact and near duplicates."""
+    config = NearDuplicateConfig(
+        threshold=near_duplicate_threshold,
+        shingle_size=shingle_size,
+        num_perm=num_perm,
+        enabled=not skip_near_duplicates,
+    )
     try:
-        report = scan_dataset(path)
+        report = scan_dataset(path, near_config=config)
     except (FileNotFoundError, ValueError) as exc:
         console.print(f"[red]Error:[/red] {exc}")
         raise typer.Exit(code=1) from exc

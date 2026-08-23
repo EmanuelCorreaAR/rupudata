@@ -52,9 +52,17 @@ def render_terminal(report: ScanReport, output_path: str, console: Console | Non
     dupes.add_column(style="bold")
     dupes.add_column()
     exact = report.exact_duplicates
+    near = report.near_duplicates
     dupes.add_row("Exact duplicates", f"{exact.duplicate_records:,}")
     dupes.add_row("Unique records", f"{exact.unique_records:,}")
     dupes.add_row("Duplicate rate", f"{exact.duplicate_rate * 100:.2f}%")
+    if near.enabled:
+        dupes.add_row("Near-dupe pairs", f"{near.pairs:,}")
+        dupes.add_row("Records flagged", f"{near.records_flagged:,}")
+        dupes.add_row("Near-dupe rate", f"{near.record_rate * 100:.2f}%")
+        dupes.add_row("Near threshold", f"{near.threshold:.2f}")
+    else:
+        dupes.add_row("Near duplicates", "skipped")
     console.print("[bold cyan]Duplicates[/bold cyan]")
     console.print("─" * 30)
     console.print(dupes)

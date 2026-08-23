@@ -23,6 +23,17 @@ class ExactDuplicates(BaseModel):
     duplicate_rate: float
 
 
+class NearDuplicates(BaseModel):
+    enabled: bool = True
+    threshold: float
+    shingle_size: int
+    num_perm: int
+    pairs: int
+    records_flagged: int
+    record_rate: float
+    method: str
+
+
 class ScanReport(BaseModel):
     """Machine-readable audit report for a single dataset scan."""
 
@@ -30,6 +41,7 @@ class ScanReport(BaseModel):
     version: str
     dataset: DatasetInfo
     exact_duplicates: ExactDuplicates
+    near_duplicates: NearDuplicates
     notes: list[str] = Field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
