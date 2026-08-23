@@ -50,7 +50,8 @@ def test_gsm8k_sample_detects_exact_and_normalized_overlap() -> None:
     assert report.result.matches.normalized
     fields_used = {m.field for m in report.result.matches.normalized}
     assert "question" in fields_used
-    assert any("does not compare all fields" in n for n in report.notes)
+    assert report.method.unit == "extracted_text"
+    assert any("text_extraction" in n for n in report.notes)
 
 
 def test_benchmark_check_cli(tmp_path: Path) -> None:
@@ -75,7 +76,8 @@ def test_benchmark_check_cli(tmp_path: Path) -> None:
     te = payload["method"]["text_extraction"]
     assert te["strategy"] == "first_non_empty"
     assert te["candidate_fields"][0] == "question"
-    assert te["unit"] == "one comparison text per record"
+    assert "unit" not in te
+    assert payload["method"]["unit"] == "extracted_text"
     assert "comparable_fields" not in payload["method"]
     assert payload["method"]["text_exact"]["id"] == "text_exact_v1"
     assert payload["method"]["text_exact"]["base_normalization"] == "record_exact_v1"

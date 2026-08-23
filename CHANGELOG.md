@@ -1,10 +1,16 @@
 # Changelog
 
-## [0.6.0] - 2026-08-23
+## [0.6.1] - 2026-08-23
 
+### Changed
+- Unify `method.unit` as matching category: `full_record` | `field_text` | `extracted_text`
+- Compare text mode exposes `method.field`; evidence uses `difference` (not `differing_fields`)
+- Drop encyclopedic matching-vocabulary notes from reports (taxonomy lives in README)
+- Remove competing `unit` from `text_extraction` (source strategy only)
+
+## [0.6.0] - 2026-08-23
 ### Added
 - `rupudata compare --text-field NAME` for field-level text overlap (`unit=field_text`, `text_exact_v1` / `text_normalized_v1`)
-
 ### Changed
 - `text_*` specs define plain-text transforms only; text source is declared by the command (`field_text` vs `text_extraction`)
 

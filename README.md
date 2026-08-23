@@ -14,7 +14,7 @@ RupuData provides **technical signals, not legal certification.**
 
 ## Status
 
-`0.6.0` — intentionally small, useful per release.
+`0.6.1` — intentionally small, useful per release.
 
 What works today:
 
@@ -91,15 +91,23 @@ input → configuration → method → result
 
 `scan`, `compare`, and `benchmark-check` share this shell, the same fingerprint id (`normalized_record_multiset_sha256`), shared row-index rules, and common disclaimers. Matching **units** differ by command (`record_*` vs `text_*`).
 
-### Matching vocabulary (units are command-specific)
+### Matching model (source → unit → spec)
+
+| `method.unit` | Text source | Specs |
+|---------------|-------------|--------|
+| `full_record` | whole record | `record_exact_v1` / `record_normalized_v1` |
+| `field_text` | explicit `method.field` (`--text-field`) | `text_exact_v1` / `text_normalized_v1` |
+| `extracted_text` | `text_extraction` (e.g. first_non_empty) | `text_exact_v1` / `text_normalized_v1` |
+
+`text_*` specs define how a plain text value is hashed. They do not define where the text came from.
+
+### Matching vocabulary by command
 
 | Command | Field | Spec / unit |
 |---------|--------|-------------|
-| `scan` | `exact_duplicates` | `record_normalized_v1` (full record; same transforms as fingerprint) |
-| `compare` | `exact_overlap` / `normalized_overlap` | `record_*` when `unit=full_record`; `text_*` when `unit=field_text` |
-| `benchmark-check` | `exact` / `normalized` | `text_*` after `text_extraction` (source ≠ field_text) |
-
-`text_exact_v1` / `text_normalized_v1` define how a plain text value is hashed. The text **source** is separate: explicit `--text-field`, or benchmark `text_extraction`.
+| `scan` | `exact_duplicates` | `record_normalized_v1` (`unit=full_record`) |
+| `compare` | `exact_overlap` / `normalized_overlap` | `record_*` or `text_*` per `method.unit` |
+| `benchmark-check` | `exact` / `normalized` | `text_*` with `unit=extracted_text` |
 
 Example (`scan`):
 

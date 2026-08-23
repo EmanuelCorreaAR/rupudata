@@ -104,8 +104,9 @@ def test_compare_text_field_mode_emits_text_specs_not_record_specs() -> None:
     )
     method = report.to_dict()["method"]
     assert method["unit"] == "field_text"
-    assert method["text_field"] == "text"
+    assert method["field"] == "text"
     assert "text_exact" in method
     assert "text_normalized" in method
     assert "record_exact" not in method
     assert "record_normalized" not in method
+    assert "text_field" not in method

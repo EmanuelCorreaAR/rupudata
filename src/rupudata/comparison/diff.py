@@ -14,11 +14,12 @@ from rupudata.core.models import (
     DEFAULT_MAX_EVIDENCE_PAIRS,
     FINGERPRINT_METHOD_ID,
     NOTE_CONTRACT,
-    NOTE_EXACT_VOCABULARY,
     NOTE_NOT_CONTAMINATION,
     NOTE_ROW_INDICES,
     NOTE_TECHNICAL_SIGNALS,
     ROW_INDEX_BASE_DEFAULT,
+    UNIT_FIELD_TEXT,
+    UNIT_FULL_RECORD,
     CompareConfiguration,
     CompareInput,
     CompareMatchEvidence,
@@ -33,7 +34,7 @@ from rupudata.core.models import (
     RECORD_NORMALIZATION_V1,
     TEXT_EXACT_V1,
     TEXT_NORMALIZED_V1,
-    TextDifference,
+    ValueDifference,
 )
 from rupudata.core.normalization import (
     fingerprint_dataframe,
@@ -162,34 +163,34 @@ def _enrich_normalized_pairs(
     rows_b: list[dict[str, Any]],
     exact_digest_a: dict[int, str],
     exact_digest_b: dict[int, str],
-    text_field: str | None,
+    field: str | None,
 ) -> list[CompareMatchItem]:
     enriched: list[CompareMatchItem] = []
     for pair in pairs:
         also_exact = (
             exact_digest_a[pair.dataset_a_record] == exact_digest_b[pair.dataset_b_record]
         )
-        diffs: list[FieldDiff] = []
-        text_diff: TextDifference | None = None
+        diffs: list[FieldDiff] | None = None
+        value_diff: ValueDifference | None = None
         if not also_exact:
-            if text_field is None:
+            if field is None:
                 diffs = field_diffs(
                     rows_a[pair.dataset_a_record],
                     rows_b[pair.dataset_b_record],
                 )
             else:
-                text_diff = TextDifference(
-                    a=_display_value(rows_a[pair.dataset_a_record].get(text_field)),
-                    b=_display_value(rows_b[pair.dataset_b_record].get(text_field)),
+                value_diff = ValueDifference(
+                    a=_display_value(rows_a[pair.dataset_a_record].get(field)),
+                    b=_display_value(rows_b[pair.dataset_b_record].get(field)),
                 )
         enriched.append(
             CompareMatchItem(
                 dataset_a_record=pair.dataset_a_record,
                 dataset_b_record=pair.dataset_b_record,
-                field=text_field,
+                field=field,
                 also_exact=also_exact,
                 differing_fields=diffs,
-                text_difference=text_diff,
+                difference=value_diff,
             )
         )
     return enriched
@@ -206,10 +207,10 @@ def _dataset_ref(path: Path, df: pl.DataFrame, fmt: str) -> DatasetRef:
     )
 
 
-def _require_text_field(df: pl.DataFrame, path: Path, text_field: str) -> None:
-    if text_field not in df.columns:
+def _require_field(df: pl.DataFrame, path: Path, field: str) -> None:
+    if field not in df.columns:
         raise ValueError(
-            f"Column '{text_field}' not found in {path} "
+            f"Column '{field}' not found in {path} "
             f"(available: {', '.join(df.columns)})"
         )
 
@@ -221,14 +222,11 @@ def compare_datasets(
     max_evidence: int = DEFAULT_MAX_EVIDENCE,
     text_field: str | None = None,
 ) -> CompareReport:
-    """Compare two local datasets by full-record or single-field text overlap.
+    """Compare two datasets by full-record or single-field text overlap.
 
-    Default (``text_field=None``): full-record ``record_exact_v1`` /
-    ``record_normalized_v1``.
-
-    With ``text_field``: hash the named column via ``text_exact_v1`` /
-    ``text_normalized_v1`` (unit ``field_text``). Same text transforms as
-    record specs; source is the explicit field, not benchmark extraction.
+    Default: ``unit=full_record`` with ``record_*`` specs.
+    With ``text_field``: ``unit=field_text`` with ``text_*`` specs; ``method.field``
+    names the column.
     """
     a_path = Path(path_a).expanduser().resolve()
     b_path = Path(path_b).expanduser().resolve()
@@ -237,8 +235,8 @@ def compare_datasets(
     df_b, fmt_b = read_dataset(b_path)
 
     if text_field is not None:
-        _require_text_field(df_a, a_path, text_field)
-        _require_text_field(df_b, b_path, text_field)
+        _require_field(df_a, a_path, text_field)
+        _require_field(df_b, b_path, text_field)
 
     rows_a = list(df_a.iter_rows(named=True))
     rows_b = list(df_b.iter_rows(named=True))
@@ -269,7 +267,7 @@ def compare_datasets(
         rows_b=rows_b,
         exact_digest_a=exact_digest_a,
         exact_digest_b=exact_digest_b,
-        text_field=text_field,
+        field=text_field,
     )
 
     ref_a = _dataset_ref(a_path, df_a, fmt_a.value)
@@ -277,15 +275,14 @@ def compare_datasets(
 
     if text_field is None:
         method = CompareMethod(
-            unit="full_record",
-            text_field=None,
-            exact_overlap="record_exact_v1 (stable_json_sha256_no_strip)",
-            normalized_overlap="record_normalized_v1 (stable_json_sha256_with_strip)",
+            unit=UNIT_FULL_RECORD,
+            field=None,
+            exact_overlap="record_exact_v1",
+            normalized_overlap="record_normalized_v1",
             fingerprint=FINGERPRINT_METHOD_ID,
             row_index_base=ROW_INDEX_BASE_DEFAULT,
             field_diff=(
-                "raw_equality per field; differing_fields only on normalized matches "
-                "that are not also exact; display values truncated"
+                "raw_equality per field; differing_fields only when also_exact is false"
             ),
             record_exact=RECORD_EXACT_V1,
             record_normalized=RECORD_NORMALIZATION_V1,
@@ -297,18 +294,15 @@ def compare_datasets(
             NOTE_TECHNICAL_SIGNALS,
             NOTE_NOT_CONTAMINATION,
             NOTE_ROW_INDICES,
-            NOTE_EXACT_VOCABULARY,
-            "Pipeline: input → full-record hashing → exact/normalized matching → evidence → result.",
-            "method.unit=full_record; overlap counts unique full records under record_* hashing.",
+            "Full-record overlap: all fields participate in matching.",
             "Normalized matches include also_exact; differing_fields only when also_exact is false.",
-            "Paraphrases, translations, and semantic near-matches are not detected.",
         ]
     else:
         method = CompareMethod(
-            unit="field_text",
-            text_field=text_field,
-            exact_overlap="text_exact_v1 (plain text value, no strip)",
-            normalized_overlap="text_normalized_v1 (plain text value, strip)",
+            unit=UNIT_FIELD_TEXT,
+            field=text_field,
+            exact_overlap="text_exact_v1",
+            normalized_overlap="text_normalized_v1",
             fingerprint=FINGERPRINT_METHOD_ID,
             row_index_base=ROW_INDEX_BASE_DEFAULT,
             field_diff=None,
@@ -322,12 +316,8 @@ def compare_datasets(
             NOTE_TECHNICAL_SIGNALS,
             NOTE_NOT_CONTAMINATION,
             NOTE_ROW_INDICES,
-            NOTE_EXACT_VOCABULARY,
-            "Pipeline: input → field text → text_exact/text_normalized matching → evidence → result.",
-            f"method.unit=field_text; text source is the explicit column '{text_field}'.",
-            "text_* specs define transforms; they do not define text extraction (benchmark uses text_extraction).",
-            "Normalized matches include also_exact; text_difference only when also_exact is false.",
-            "Paraphrases, translations, and semantic near-matches are not detected.",
+            f"Field-text overlap compares only column '{text_field}'; other fields do not affect matching.",
+            "Normalized matches include also_exact; difference only when also_exact is false.",
         ]
 
     return CompareReport(
@@ -338,7 +328,7 @@ def compare_datasets(
             match_normalized=True,
             max_evidence_pairs=max_evidence,
             row_index_base=ROW_INDEX_BASE_DEFAULT,
-            text_field=text_field,
+            field=text_field,
         ),
         method=method,
         result=CompareResult(

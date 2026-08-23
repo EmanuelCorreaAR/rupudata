@@ -11,7 +11,6 @@ from rupudata.core.models import (
     DISCLAIMER,
     FINGERPRINT_METHOD_ID,
     NOTE_CONTRACT,
-    NOTE_EXACT_VOCABULARY,
     NOTE_NOT_CONTAMINATION,
     NOTE_ROW_INDICES,
     NOTE_TECHNICAL_SIGNALS,
@@ -20,11 +19,24 @@ from rupudata.core.models import (
     ROW_INDEX_BASE_DEFAULT,
     TEXT_EXACT_V1,
     TEXT_NORMALIZED_V1,
+    UNIT_EXTRACTED_TEXT,
+    UNIT_FIELD_TEXT,
+    UNIT_FULL_RECORD,
 )
 from rupudata.core.scanner import scan_dataset
 
 EXAMPLES = Path(__file__).resolve().parents[1] / "examples"
-CONTRACT_KEYS = ("tool", "version", "contract", "disclaimer", "input", "configuration", "method", "result", "notes")
+CONTRACT_KEYS = (
+    "tool",
+    "version",
+    "contract",
+    "disclaimer",
+    "input",
+    "configuration",
+    "method",
+    "result",
+    "notes",
+)
 
 
 def _assert_shared_shell(report) -> None:
@@ -38,7 +50,6 @@ def _assert_shared_shell(report) -> None:
     assert NOTE_TECHNICAL_SIGNALS in report.notes
     assert NOTE_NOT_CONTAMINATION in report.notes
     assert NOTE_ROW_INDICES in report.notes
-    assert NOTE_EXACT_VOCABULARY in report.notes
 
 
 def test_scan_compare_benchmark_share_contract_shell() -> None:
@@ -53,26 +64,24 @@ def test_scan_compare_benchmark_share_contract_shell() -> None:
     assert compare.method.fingerprint == FINGERPRINT_METHOD_ID
     assert bench.method.fingerprint == FINGERPRINT_METHOD_ID
 
+    assert scan.method.unit == UNIT_FULL_RECORD
+    assert compare.method.unit == UNIT_FULL_RECORD
+    assert bench.method.unit == UNIT_EXTRACTED_TEXT
+
     assert scan.configuration.row_index_base == ROW_INDEX_BASE_DEFAULT
     assert compare.configuration.row_index_base == ROW_INDEX_BASE_DEFAULT
     assert bench.configuration.row_index_base == ROW_INDEX_BASE_DEFAULT
-    assert scan.method.row_index_base == ROW_INDEX_BASE_DEFAULT
-    assert compare.method.row_index_base == ROW_INDEX_BASE_DEFAULT
-    assert bench.method.row_index_base == ROW_INDEX_BASE_DEFAULT
 
     assert scan.method.record_normalized.id == RECORD_NORMALIZATION_V1.id
     assert compare.method.record_normalized.id == RECORD_NORMALIZATION_V1.id
     assert compare.method.record_exact.id == RECORD_EXACT_V1.id
     assert bench.method.text_exact.id == TEXT_EXACT_V1.id
     assert bench.method.text_normalized.id == TEXT_NORMALIZED_V1.id
-    assert bench.method.text_exact.base_normalization == "record_exact_v1"
-    assert bench.method.text_normalized.base_normalization == "record_normalized_v1"
+    assert "unit" not in bench.to_dict()["method"]["text_extraction"]
     assert "comparable_fields" not in bench.to_dict()["method"]
 
-    assert compare.configuration.max_evidence_pairs == bench.configuration.max_evidence_pairs
-    assert "NOT compare exact_overlap" in scan.method.exact_duplicates
-    assert "record_exact_v1" in compare.method.exact_overlap
-    assert "record_normalized_v1" in compare.method.normalized_overlap
-    assert compare.method.unit == "full_record"
-    assert "text_exact_v1" in bench.method.exact
-    assert "text_normalized_v1" in bench.method.normalized
+    field_compare = compare_datasets(
+        EXAMPLES / "train.jsonl", EXAMPLES / "eval.jsonl", text_field="text"
+    )
+    assert field_compare.method.unit == UNIT_FIELD_TEXT
+    assert field_compare.method.field == "text"

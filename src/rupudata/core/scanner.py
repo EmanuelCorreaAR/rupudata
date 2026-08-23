@@ -9,7 +9,6 @@ from rupudata.analyzers.duplicates import analyze_exact_duplicates
 from rupudata.analyzers.near_duplicates import NearDuplicateConfig, analyze_near_duplicates
 from rupudata.core.models import (
     NOTE_CONTRACT,
-    NOTE_EXACT_VOCABULARY,
     NOTE_NOT_CONTAMINATION,
     NOTE_ROW_INDICES,
     NOTE_TECHNICAL_SIGNALS,
@@ -18,6 +17,7 @@ from rupudata.core.models import (
     NearDuplicateResult,
     RECORD_NORMALIZATION_V1,
     ROW_INDEX_BASE_DEFAULT,
+    UNIT_FULL_RECORD,
     ScanConfiguration,
     ScanInput,
     ScanMethod,
@@ -48,8 +48,7 @@ def scan_dataset(
         NOTE_TECHNICAL_SIGNALS,
         NOTE_NOT_CONTAMINATION,
         NOTE_ROW_INDICES,
-        NOTE_EXACT_VOCABULARY,
-        "Fingerprint and scan exact_duplicates both hash full records with record_normalized_v1.",
+        "Fingerprint and exact_duplicates hash full records with record_normalized_v1.",
         "Near-duplicates measure lexical similarity only — not paraphrases or translations.",
     ]
     if not cfg.enabled:
@@ -58,8 +57,7 @@ def scan_dataset(
             NOTE_TECHNICAL_SIGNALS,
             NOTE_NOT_CONTAMINATION,
             NOTE_ROW_INDICES,
-            NOTE_EXACT_VOCABULARY,
-            "Fingerprint and scan exact_duplicates both hash full records with record_normalized_v1.",
+            "Fingerprint and exact_duplicates hash full records with record_normalized_v1.",
             "Near-duplicate detection was disabled for this scan.",
         ]
         near_method = NearDuplicateMethod(
@@ -97,6 +95,7 @@ def scan_dataset(
             ),
         ),
         method=ScanMethod(
+            unit=UNIT_FULL_RECORD,
             row_index_base=ROW_INDEX_BASE_DEFAULT,
             record_normalized=RECORD_NORMALIZATION_V1,
             near_duplicates=near_method,

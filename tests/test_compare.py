@@ -48,7 +48,7 @@ def test_compare_train_eval_overlap() -> None:
         for m in report.result.matches.normalized
     }
     assert by_rows[(0, 0)].also_exact is True
-    assert by_rows[(0, 0)].differing_fields == []
+    assert by_rows[(0, 0)].differing_fields is None or by_rows[(0, 0)].differing_fields == []
     only_norm = by_rows[(2, 2)]
     assert only_norm.also_exact is False
     assert only_norm.differing_fields
@@ -129,8 +129,8 @@ def test_compare_text_field_differs_from_full_record_matching(tmp_path: Path) ->
     assert record_report.result.normalized_overlap.shared_records == 0
 
     assert text_report.method.unit == "field_text"
-    assert text_report.method.text_field == "text"
-    assert text_report.configuration.text_field == "text"
+    assert text_report.method.field == "text"
+    assert text_report.configuration.field == "text"
     assert text_report.result.exact_overlap.shared_records == 1
     assert text_report.result.normalized_overlap.shared_records == 1
     assert text_report.method.text_exact is not None
@@ -140,7 +140,7 @@ def test_compare_text_field_differs_from_full_record_matching(tmp_path: Path) ->
     assert text_report.result.matches.normalized[0].also_exact is True
 
 
-def test_compare_text_field_normalized_only_uses_text_difference(tmp_path: Path) -> None:
+def test_compare_text_field_normalized_only_uses_difference(tmp_path: Path) -> None:
     path_a = tmp_path / "a.jsonl"
     path_b = tmp_path / "b.jsonl"
     path_a.write_text('{"text": "  hello world  ", "id": 1}\n', encoding="utf-8")
@@ -151,10 +151,10 @@ def test_compare_text_field_normalized_only_uses_text_difference(tmp_path: Path)
     match = report.result.matches.normalized[0]
     assert match.also_exact is False
     assert match.field == "text"
-    assert match.differing_fields == []
-    assert match.text_difference is not None
-    assert "hello world" in match.text_difference.a
-    assert match.text_difference.b == "hello world"
+    assert match.differing_fields is None
+    assert match.difference is not None
+    assert "hello world" in match.difference.a
+    assert match.difference.b == "hello world"
 
 
 def test_compare_text_field_cli(tmp_path: Path) -> None:
@@ -181,9 +181,11 @@ def test_compare_text_field_cli(tmp_path: Path) -> None:
     assert result.exit_code == 0, result.output
     payload = json.loads(out.read_text(encoding="utf-8"))
     assert payload["method"]["unit"] == "field_text"
-    assert payload["method"]["text_field"] == "text"
+    assert payload["method"]["field"] == "text"
+    assert payload["configuration"]["field"] == "text"
     assert payload["method"]["text_exact"]["id"] == "text_exact_v1"
     assert "record_exact" not in payload["method"]
+    assert "text_field" not in payload["method"]
     assert payload["result"]["exact_overlap"]["shared_records"] == 1
 
 

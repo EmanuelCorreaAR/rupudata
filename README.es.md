@@ -14,7 +14,7 @@ RupuData ofrece **señales técnicas, no certificación legal.**
 
 ## Estado
 
-`0.6.0` — deliberadamente chico; cada release aporta algo útil.
+`0.6.1` — deliberadamente chico; cada release aporta algo útil.
 
 Qué funciona hoy:
 
@@ -91,15 +91,23 @@ input → configuration → method → result
 
 `scan`, `compare` y `benchmark-check` comparten este shell, el mismo id de fingerprint (`normalized_record_multiset_sha256`), reglas de índices y disclaimers comunes. Las **unidades** de matching difieren por comando (`record_*` vs `text_*`).
 
-### Vocabulario de matching (la unidad depende del comando)
+### Modelo de matching (fuente → unidad → spec)
+
+| `method.unit` | Fuente del texto | Specs |
+|---------------|-------------|--------|
+| `full_record` | registro completo | `record_exact_v1` / `record_normalized_v1` |
+| `field_text` | `method.field` explícito (`--text-field`) | `text_exact_v1` / `text_normalized_v1` |
+| `extracted_text` | `text_extraction` (p. ej. first_non_empty) | `text_exact_v1` / `text_normalized_v1` |
+
+Los specs `text_*` definen cómo se hashea un valor de texto. No definen de dónde salió.
+
+### Vocabulario por comando
 
 | Comando | Campo | Spec / unidad |
 |---------|--------|-------------|
-| `scan` | `exact_duplicates` | `record_normalized_v1` (registro completo; mismos transforms que el fingerprint) |
-| `compare` | `exact_overlap` / `normalized_overlap` | `record_*` si `unit=full_record`; `text_*` si `unit=field_text` |
-| `benchmark-check` | `exact` / `normalized` | `text_*` tras `text_extraction` (fuente ≠ field_text) |
-
-`text_exact_v1` / `text_normalized_v1` definen cómo se hashea un valor de texto. La **fuente** del texto es aparte: `--text-field` explícito, o `text_extraction` en benchmark.
+| `scan` | `exact_duplicates` | `record_normalized_v1` (`unit=full_record`) |
+| `compare` | `exact_overlap` / `normalized_overlap` | `record_*` o `text_*` según `method.unit` |
+| `benchmark-check` | `exact` / `normalized` | `text_*` con `unit=extracted_text` |
 
 Ejemplo (`scan`):
 
