@@ -1,7 +1,10 @@
 # Changelog
 
-## [0.5.1] - 2026-08-23
+## [0.5.2] - 2026-08-23
+### Added
+- Contract hardening tests: whitespace invariants for record_*/text_* and command-specific method specs
 
+## [0.5.1] - 2026-08-23
 ### Changed
 - Benchmark: `text_normalization` → `text_normalized`; specs include `base_normalization`
 - Scan/compare: `method.record_normalization` → `method.record_normalized` (pairs with `record_exact` / `text_exact` / `text_normalized`)

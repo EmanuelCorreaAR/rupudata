@@ -1,0 +1,96 @@
+"""Contract hardening: matching-unit invariants (record_* vs text_*)."""
+
+from __future__ import annotations
+
+from pathlib import Path
+
+from rupudata.contamination.check import check_benchmark
+from rupudata.core.models import (
+    BenchmarkMethod,
+    CompareMethod,
+    ScanMethod,
+    TEXT_EXACT_V1,
+    TEXT_NORMALIZED_V1,
+)
+from rupudata.core.normalization import hash_record_exact, hash_record_normalized
+from rupudata.core.scanner import scan_dataset
+from rupudata.comparison.diff import compare_datasets
+
+EXAMPLES = Path(__file__).resolve().parents[1] / "examples"
+
+PADDED = "  hello world  "
+STRIPPED = "hello world"
+
+
+def test_record_exact_differs_from_record_normalized_on_outer_whitespace() -> None:
+    """record_exact_v1 ≠ record_normalized_v1 when only outer whitespace differs."""
+    padded = {"text": PADDED, "source": "x"}
+    stripped = {"text": STRIPPED, "source": "x"}
+
+    assert hash_record_exact(padded) != hash_record_exact(stripped)
+    assert hash_record_exact(padded) != hash_record_normalized(padded)
+    assert hash_record_normalized(padded) == hash_record_normalized(stripped)
+    assert hash_record_exact(stripped) == hash_record_normalized(stripped)
+
+
+def test_text_exact_differs_from_text_normalized_on_outer_whitespace() -> None:
+    """text_* reuse record string transforms on extracted {text}; same whitespace invariant."""
+    padded = {"text": PADDED}
+    stripped = {"text": STRIPPED}
+
+    # Implementation hashes extracted comparison text via record_* helpers on {text}.
+    assert hash_record_exact(padded) != hash_record_exact(stripped)
+    assert hash_record_normalized(padded) == hash_record_normalized(stripped)
+
+    assert TEXT_EXACT_V1.base_normalization == "record_exact_v1"
+    assert TEXT_NORMALIZED_V1.base_normalization == "record_normalized_v1"
+    assert TEXT_EXACT_V1.string_strip is False
+    assert TEXT_NORMALIZED_V1.string_strip is True
+    assert TEXT_EXACT_V1.unit == "extracted_comparison_text"
+    assert TEXT_NORMALIZED_V1.unit == "extracted_comparison_text"
+
+
+def test_benchmark_method_uses_text_specs_not_record_specs() -> None:
+    report = check_benchmark(EXAMPLES / "train_with_gsm8k_overlap.jsonl", "gsm8k")
+    method = report.to_dict()["method"]
+
+    assert "text_extraction" in method
+    assert "text_exact" in method
+    assert "text_normalized" in method
+    assert method["text_exact"]["id"] == "text_exact_v1"
+    assert method["text_normalized"]["id"] == "text_normalized_v1"
+    assert method["text_exact"]["base_normalization"] == "record_exact_v1"
+    assert method["text_normalized"]["base_normalization"] == "record_normalized_v1"
+
+    assert "record_exact" not in method
+    assert "record_normalized" not in method
+    assert "record_normalization" not in method
+    assert "comparable_fields" not in method
+
+    assert "record_exact" not in BenchmarkMethod.model_fields
+    assert "record_normalized" not in BenchmarkMethod.model_fields
+    assert "text_exact" in BenchmarkMethod.model_fields
+    assert "text_normalized" in BenchmarkMethod.model_fields
+
+
+def test_compare_and_scan_use_record_specs_not_text_specs() -> None:
+    scan = scan_dataset(EXAMPLES / "example.jsonl").to_dict()["method"]
+    compare = compare_datasets(
+        EXAMPLES / "train.jsonl", EXAMPLES / "eval.jsonl"
+    ).to_dict()["method"]
+
+    assert "record_normalized" in scan
+    assert "text_exact" not in scan
+    assert "text_normalized" not in scan
+    assert "text_extraction" not in scan
+
+    assert "record_exact" in compare
+    assert "record_normalized" in compare
+    assert "text_exact" not in compare
+    assert "text_normalized" not in compare
+    assert "text_extraction" not in compare
+
+    assert "record_normalized" in ScanMethod.model_fields
+    assert "text_exact" not in ScanMethod.model_fields
+    assert "record_exact" in CompareMethod.model_fields
+    assert "text_exact" not in CompareMethod.model_fields

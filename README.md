@@ -14,7 +14,7 @@ RupuData provides **technical signals, not legal certification.**
 
 ## Status
 
-`0.5.1` — intentionally small, useful per release.
+`0.5.2` — intentionally small, useful per release.
 
 What works today:
 
