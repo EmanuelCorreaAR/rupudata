@@ -2,86 +2,117 @@
 
 **Language:** [English](README.md) | [Español](README.es.md)
 
-Open-source, local-first CLI for inspecting and auditing datasets used in AI workflows.
-
 **Follow the path of your data.**
 
-Start by understanding what is inside your dataset: structure, duplicates, overlap
-between datasets, and a deterministic content fingerprint — before you use it for
-training, fine-tuning, or evaluation.
+RupuData detects **dataset overlap**, **duplicates**, and **benchmark contamination signals** — locally, with deterministic machine-readable audit reports.
 
-RupuData provides **technical signals, not legal certification.**
-
-## Status
-
-`0.6.1` — intentionally small, useful per release.
-
-What works today:
-
-- `rupudata scan` on JSONL and Parquet
-- Dataset stats (rows, size, columns, format)
-- Deterministic content fingerprint (`rupu:…`)
-- Exact duplicate detection (normalized record hashing)
-- Near-duplicate detection (character shingles + Jaccard; MinHash/LSH for larger sets)
-- `rupudata compare` — exact and normalized overlap between two datasets, with per-match row evidence (full record or `--text-field`)
-- `rupudata benchmark-check` — exact/normalized overlap vs a benchmark reference (e.g. GSM8K sample), with per-match evidence (row + field)
-- Machine-readable **technical audit contract** JSON (`input → configuration → method → result`)
-
-Not in this release (on purpose):
-
-- Semantic / paraphrase / translation matching
-- Near-duplicate matching against benchmarks
-- Provenance / license signal detectors
-- CI gates
-- Streaming scans for multi-GB datasets
+Compare datasets, scan for duplicates, and check whether training data overlaps known evaluation benchmarks. Technical signals, not legal certification.
 
 ## Install
 
+Requires **Python 3.9+**.
+
 ```bash
-pip install -e ".[dev]"
+pip install rupudata
+```
+
+```bash
+rupudata --help
 ```
 
 ## Quick start
 
-### Scan
+### Check train ↔ eval overlap
 
 ```bash
-rupudata scan examples/example.jsonl
-rupudata scan examples/near_dupes.jsonl --near-duplicate-threshold 0.85
+rupudata compare train.jsonl eval.jsonl
 ```
 
-### Compare
+Example (from the repo `examples/`):
+
+```text
+RupuData v0.6.3
+
+Exact overlap:       1
+Normalized overlap:  2
+
+Evidence (sample)
+  dataset_a_row  dataset_b_row
+  0              0
+```
+
+### Check overlap with a known benchmark
 
 ```bash
-rupudata compare examples/train.jsonl examples/eval.jsonl
+rupudata benchmark-check train.jsonl --benchmark gsm8k
 ```
 
-Compares **full records** by default (`unit=full_record`). With `--text-field NAME`, compares that column via `text_exact_v1` / `text_normalized_v1` (`unit=field_text`). Cap evidence with `--max-evidence`.
+Status is `OVERLAP_DETECTED` or `NO_OVERLAP_DETECTED` under the matching methodology — **not** a claim that a model is contaminated.
 
-Match evidence: `exact` lists row pairs only; `normalized` always includes `also_exact`, and adds `differing_fields` (full record) or `difference` (field text) only when `also_exact` is false — no empty diff arrays.
-
-```bash
-rupudata compare examples/train.jsonl examples/eval.jsonl --text-field text
-```
-
-### Benchmark check
-
-```bash
-rupudata benchmark-check examples/train_with_gsm8k_overlap.jsonl --benchmark gsm8k
-```
-
-Reports exact and normalized text overlap against a benchmark reference.  
-Default `gsm8k` uses a **tiny packaged sample** (demos/tests). For real audits:
+Default `gsm8k` uses a **tiny packaged sample** (demos/tests). For real audits, pass your reference:
 
 ```bash
 rupudata benchmark-check train.jsonl --benchmark gsm8k --reference /path/to/gsm8k.jsonl
 ```
 
-Status is `OVERLAP_DETECTED` or `NO_OVERLAP_DETECTED` under the matching methodology — **not** a claim that a model is contaminated.
+### Scan one dataset
 
-Benchmarks are pluggable via a `BenchmarkAdapter` interface (`load_reference`, `candidate_fields`). Only **GSM8K** is registered today.
+```bash
+rupudata scan dataset.jsonl
+```
 
-Matching uses **text extraction**, not full-record comparison: one comparison text per record via `first_non_empty` over `candidate_fields` (`question`, `problem`, `prompt`, `text`). Remaining fields are ignored. Evidence includes the selected `field`.
+Stats, fingerprint (`rupu:…`), exact duplicates, and lexical near-duplicates (JSONL / Parquet).
+
+## What each command answers
+
+```text
+scan
+  → Do I have duplicates?
+
+compare
+  → Do train and eval share data?
+
+benchmark-check
+  → Does my dataset contain known benchmark text?
+```
+
+## Formats & reports
+
+- Input: **JSONL** and **Parquet**
+- Output: terminal summary + JSON audit contract (`input → configuration → method → result`)
+- Defaults: `rupudata-report.json`, `rupudata-compare.json`, `rupudata-benchmark.json`
+
+```bash
+rupudata compare a.jsonl b.jsonl -o reports/compare.json
+```
+
+Compare full records by default. For a single text column:
+
+```bash
+rupudata compare train.jsonl eval.jsonl --text-field text
+```
+
+## Try the packaged examples
+
+Clone the repo (or download `examples/` from GitHub):
+
+```bash
+git clone https://github.com/EmanuelCorreaAR/rupudata.git
+cd rupudata
+pip install rupudata
+
+rupudata compare examples/train.jsonl examples/eval.jsonl
+rupudata benchmark-check examples/train_with_gsm8k_overlap.jsonl --benchmark gsm8k
+rupudata scan examples/near_dupes.jsonl --near-duplicate-threshold 0.85
+```
+
+## Status
+
+`0.6.3` — product release: install from PyPI, user-facing docs, CI.
+
+**Not in this release (on purpose):** semantic / paraphrase matching, CI fail gates, streaming multi-GB scans, provenance/license detectors.
+
+**Next:** driven by real usage. Likely first bridge: exit codes for pipelines (`--fail-on-overlap`). Matching model stays stable unless users need a change.
 
 ## Technical audit contract
 
@@ -90,8 +121,6 @@ JSON reports are shaped so a third party can reproduce the finding:
 ```text
 input → configuration → method → result
 ```
-
-`scan`, `compare`, and `benchmark-check` share this shell, the same fingerprint id (`normalized_record_multiset_sha256`), shared row-index rules, and common disclaimers. Matching **units** differ by command (`record_*` vs `text_*`).
 
 ### Matching model (source → unit → spec)
 
@@ -111,110 +140,45 @@ input → configuration → method → result
 | `compare` | `exact_overlap` / `normalized_overlap` | `record_*` or `text_*` per `method.unit` |
 | `benchmark-check` | `exact` / `normalized` | `text_*` with `unit=extracted_text` |
 
-Example (`scan`):
+Compare match evidence: `exact` lists row pairs only; `normalized` always includes `also_exact`, and adds `differing_fields` (full record) or `difference` (field text) only when `also_exact` is false.
 
-```json
-{
-  "contract": "technical_audit",
-  "disclaimer": "Technical signals, not legal certification.",
-  "input": { "rows": 5, "format": "jsonl", "path": "..." },
-  "configuration": {
-    "near_duplicates": {
-      "enabled": true,
-      "threshold": 0.85,
-      "shingle": { "unit": "character", "size": 5 },
-      "num_perm": 64
-    }
-  },
-  "method": {
-    "fingerprint": "normalized_record_multiset_sha256",
-    "exact_duplicates": "record_normalized_v1 / normalized_record_sha256 (NOT compare exact_overlap / record_exact_v1)",
-    "record_normalized": {
-      "id": "record_normalized_v1",
-      "string_strip": true,
-      "collapse_internal_whitespace": false,
-      "case_fold": false,
-      "unicode_normalize": null
-    },
-    "near_duplicates": {
-      "similarity": "character_shingles+jaccard",
-      "candidate_generation": "pairwise",
-      "shingle": { "unit": "character", "size": 5 },
-      "minhash": { "enabled": false, "num_perm": null },
-      "text_prep": { "id": "near_text_v1", "lowercase": true, "collapse_whitespace": true }
-    }
-  },
-  "result": {
-    "fingerprint": "rupu:…",
-    "exact_duplicates": { "duplicate_records": 0, "duplicate_rate": 0.0 },
-    "near_duplicates": { "pairs": 1, "records_flagged": 2, "record_rate": 0.4 }
-  }
-}
-```
+### What “normalized” means (fingerprint + scan exact duplicates)
 
-- `configuration` = what you asked for (CLI intent).
-- `method` = what actually ran (`pairwise` vs `minhash_lsh`; `num_perm` only when MinHash ran).
-- `result` = reproducible numeric evidence under that method.
-
-### What “normalized” means (fingerprint + exact duplicates)
-
-Policy id: `record_normalized_v1` (also under `method.record_normalized` in the JSON).
+Policy id: `record_normalized_v1`.
 
 | Step | Behavior |
 |---|---|
-| Fields | **All** record fields are included (no column exclusions) |
-| Keys | Object keys sorted recursively |
-| Strings | `str.strip()` only (leading/trailing whitespace) |
-| Internal spaces | **Kept** — `" Hello   World "` → `"Hello   World"` |
-| Case | **Not** lowercased |
-| Unicode | **No** NFC/NFKC normalization |
-| Serialize | Compact UTF-8 JSON, sorted keys |
-| Hash | SHA-256 |
+| Fields | **All** record fields |
+| Keys | Sorted recursively |
+| Strings | `str.strip()` only |
+| Internal spaces | **Kept** |
+| Case / Unicode | No lowercasing, no NFC/NFKC |
+| Hash | SHA-256 over compact sorted JSON |
 
-Fingerprint = SHA-256 over the **sorted multiset** of per-record hashes, then `rupu:` + 16 hex chars.
+Fingerprint = SHA-256 over the **sorted multiset** of per-record hashes → `rupu:` + 16 hex chars.
 
-Near-duplicates use a **different** text prep (`near_text_v1`: lowercase + collapse whitespace on the comparable text). That does **not** change the fingerprint.
-
-This is intentionally **not** a legal opinion.
-
-### Near-duplicate methodology
-
-1. Take comparable text (`text` column if present, otherwise joined string fields).
-2. Build character shingles (default size 5).
-3. Find candidate pairs (all pairs if ≤250 rows; otherwise MinHash + LSH).
-4. Keep pairs with Jaccard ≥ threshold that are **not** exact normalized duplicates.
-
-This is **lexical** similarity. It will not claim two paraphrases are duplicates.
-
-`--num-perm` only affects scans that take the MinHash/LSH path.
+Near-duplicates use a **different** text prep (`near_text_v1`: lowercase + collapse whitespace). Lexical similarity only — not paraphrases.
 
 ```bash
 rupudata scan dataset.parquet --skip-near-duplicates
 ```
 
-```bash
-rupudata scan examples/example.jsonl -o reports/audit.json
-rupudata compare examples/train.jsonl examples/eval.jsonl -o reports/compare.json
-```
-
 ## What RupuData does not do
 
-RupuData does not:
-
-- determine legal ownership
-- certify copyright compliance
-- guarantee that a dataset is legally safe
+- determine legal ownership or certify copyright compliance
+- guarantee a dataset is legally safe
 - detect every form of benchmark contamination
-- claim semantic understanding of every near-duplicate
-- replace specialized license scanners or large-scale processing frameworks
-
-That honesty is intentional.
+- claim semantic understanding of near-duplicates
+- replace specialized license scanners or large-scale frameworks
 
 ## Development
 
 ```bash
+git clone https://github.com/EmanuelCorreaAR/rupudata.git
+cd rupudata
 pip install -e ".[dev]"
 pytest
+python -m build
 ```
 
 ## License

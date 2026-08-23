@@ -4,20 +4,39 @@ build-backend = "hatchling.build"
 
 [project]
 name = "rupudata"
-version = "0.6.2"
-description = "Open-source, local-first CLI for inspecting and auditing datasets used in AI workflows."
+version = "0.6.3"
+description = "Local-first CLI to detect dataset overlap, duplicates, and benchmark contamination signals — with deterministic audit reports."
 readme = "README.md"
 license = "Apache-2.0"
 requires-python = ">=3.9"
 authors = [{ name = "Emanuel Correa" }]
-keywords = ["datasets", "ai", "audit", "cli", "deduplication"]
+keywords = [
+    "datasets",
+    "llm",
+    "ai",
+    "audit",
+    "cli",
+    "deduplication",
+    "contamination",
+    "benchmark",
+    "overlap",
+    "data-quality",
+]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Environment :: Console",
     "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
     "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Quality Assurance",
 ]
 dependencies = [
     "polars>=1.0.0",
@@ -28,6 +47,7 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
+    "build>=1.0.0",
     "pytest>=8.0.0",
 ]
 
@@ -37,6 +57,20 @@ rupudata = "rupudata.cli:app"
 [project.urls]
 Homepage = "https://github.com/EmanuelCorreaAR/rupudata"
 Repository = "https://github.com/EmanuelCorreaAR/rupudata"
+Issues = "https://github.com/EmanuelCorreaAR/rupudata/issues"
+Changelog = "https://github.com/EmanuelCorreaAR/rupudata/blob/main/CHANGELOG.md"
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/src",
+    "/tests",
+    "/examples",
+    "/README.md",
+    "/README.es.md",
+    "/LICENSE",
+    "/CHANGELOG.md",
+    "/pyproject.toml",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

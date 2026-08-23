@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.3] - 2026-08-23
+### Added
+- GitHub Actions CI: pytest on Python 3.9–3.12, wheel build, clean-venv smoke (`rupudata --help`, compare, benchmark-check)
+### Changed
+- Product packaging for PyPI: richer metadata, Python version classifiers, sdist includes `examples/`
+- README oriented to end users (`pip install rupudata`, 60-second path: compare → benchmark-check → scan)
+
 ## [0.6.2] - 2026-08-23
 ### Changed
 - Formalize compare match evidence shape: exact omits `also_exact`/diffs; normalized always has `also_exact` and includes `differing_fields`/`difference` only when `also_exact` is false
