@@ -4,7 +4,7 @@
 
 **Follow the path of your data.**
 
-RupuData detects **dataset overlap**, **duplicates**, and **benchmark contamination signals** — locally, with deterministic machine-readable audit reports.
+RupuData detects **dataset duplicates**, **train/eval overlap**, and **benchmark overlap signals** — locally, with deterministic, machine-readable audit reports.
 
 Compare datasets, scan for duplicates, and check whether training data overlaps known evaluation benchmarks. Technical signals, not legal certification.
 
@@ -22,13 +22,19 @@ rupudata --help
 
 ## Quick start
 
-### Check train ↔ eval overlap
-
 ```bash
+pip install rupudata
+
+rupudata scan dataset.jsonl
 rupudata compare train.jsonl eval.jsonl
+rupudata benchmark-check train.jsonl --benchmark gsm8k
 ```
 
-Example (from the repo `examples/`):
+Three commands. One goal: understand whether data overlaps where it shouldn't.
+
+### Example output (`compare`)
+
+From the repo `examples/`:
 
 ```text
 RupuData v0.6.3
@@ -41,27 +47,15 @@ Evidence (sample)
   0              0
 ```
 
-### Check overlap with a known benchmark
-
-```bash
-rupudata benchmark-check train.jsonl --benchmark gsm8k
-```
+### Benchmark reference: demo sample vs real audit
 
 Status is `OVERLAP_DETECTED` or `NO_OVERLAP_DETECTED` under the matching methodology — **not** a claim that a model is contaminated.
 
-Default `gsm8k` uses a **tiny packaged sample** (demos/tests). For real audits, pass your reference:
+> **Warning:** The packaged GSM8K reference is a **tiny demo sample**, not the full benchmark. A `NO_OVERLAP_DETECTED` result against the sample does **not** mean your dataset is free of GSM8K. For an actual audit, provide the benchmark export with `--reference`.
 
 ```bash
 rupudata benchmark-check train.jsonl --benchmark gsm8k --reference /path/to/gsm8k.jsonl
 ```
-
-### Scan one dataset
-
-```bash
-rupudata scan dataset.jsonl
-```
-
-Stats, fingerprint (`rupu:…`), exact duplicates, and lexical near-duplicates (JSONL / Parquet).
 
 ## What each command answers
 
@@ -114,9 +108,17 @@ rupudata scan examples/near_dupes.jsonl --near-duplicate-threshold 0.85
 
 **Next:** driven by real usage. Likely first bridge: exit codes for pipelines (`--fail-on-overlap`). Matching model stays stable unless users need a change.
 
+## What RupuData does not do
+
+- determine legal ownership or certify copyright compliance
+- guarantee a dataset is legally safe
+- detect every form of benchmark contamination
+- claim semantic understanding of near-duplicates
+- replace specialized license scanners or large-scale frameworks
+
 ## Technical audit contract
 
-JSON reports are shaped so a third party can reproduce the finding:
+For readers who need to reproduce findings exactly. JSON reports are shaped so a third party can audit the method:
 
 ```text
 input → configuration → method → result
@@ -130,7 +132,7 @@ input → configuration → method → result
 | `field_text` | explicit `method.field` (`--text-field`) | `text_exact_v1` / `text_normalized_v1` |
 | `extracted_text` | `text_extraction` (e.g. first_non_empty) | `text_exact_v1` / `text_normalized_v1` |
 
-`text_*` specs define how a plain text value is hashed. They do not define where the text came from.
+`text_*` specs define how a plain text value is hashed. They do not define where the text came from — the command declares the source.
 
 ### Matching vocabulary by command
 
@@ -162,14 +164,6 @@ Near-duplicates use a **different** text prep (`near_text_v1`: lowercase + colla
 ```bash
 rupudata scan dataset.parquet --skip-near-duplicates
 ```
-
-## What RupuData does not do
-
-- determine legal ownership or certify copyright compliance
-- guarantee a dataset is legally safe
-- detect every form of benchmark contamination
-- claim semantic understanding of near-duplicates
-- replace specialized license scanners or large-scale frameworks
 
 ## Development
 

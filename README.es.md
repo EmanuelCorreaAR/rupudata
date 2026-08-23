@@ -4,7 +4,7 @@
 
 **Follow the path of your data.**
 
-RupuData detecta **overlap entre datasets**, **duplicados** y **señales de contaminación con benchmarks** — en local, con reportes de auditoría deterministas y legibles por máquina.
+RupuData detecta **duplicados en datasets**, **overlap train/eval** y **señales de overlap con benchmarks** — en local, con reportes de auditoría deterministas y legibles por máquina.
 
 Compará datasets, escaneá duplicados y verificá si tu training data solapa benchmarks de evaluación conocidos. Señales técnicas, no certificación legal.
 
@@ -22,13 +22,19 @@ rupudata --help
 
 ## Inicio rápido
 
-### Overlap train ↔ eval
-
 ```bash
+pip install rupudata
+
+rupudata scan dataset.jsonl
 rupudata compare train.jsonl eval.jsonl
+rupudata benchmark-check train.jsonl --benchmark gsm8k
 ```
 
-Ejemplo (desde `examples/` del repo):
+Tres comandos. Un objetivo: entender si los datos se solapan donde no deberían.
+
+### Ejemplo de salida (`compare`)
+
+Desde `examples/` del repo:
 
 ```text
 RupuData v0.6.3
@@ -41,27 +47,15 @@ Evidence (sample)
   0              0
 ```
 
-### Overlap con un benchmark conocido
-
-```bash
-rupudata benchmark-check train.jsonl --benchmark gsm8k
-```
+### Reference de benchmark: sample demo vs auditoría real
 
 El status es `OVERLAP_DETECTED` o `NO_OVERLAP_DETECTED` bajo la metodología — **no** una afirmación de que el modelo está contaminado.
 
-Por defecto `gsm8k` usa un **sample empaquetado** (demos/tests). Para auditorías reales:
+> **Advertencia:** El reference GSM8K empaquetado es un **sample de demo diminuto**, no el benchmark completo. Un `NO_OVERLAP_DETECTED` contra el sample **no** significa que tu dataset esté libre de GSM8K. Para una auditoría real, pasá el export del benchmark con `--reference`.
 
 ```bash
 rupudata benchmark-check train.jsonl --benchmark gsm8k --reference /path/to/gsm8k.jsonl
 ```
-
-### Escanear un dataset
-
-```bash
-rupudata scan dataset.jsonl
-```
-
-Stats, fingerprint (`rupu:…`), duplicados exactos y near-duplicates léxicos (JSONL / Parquet).
 
 ## Qué responde cada comando
 
@@ -112,9 +106,17 @@ rupudata scan examples/near_dupes.jsonl --near-duplicate-threshold 0.85
 
 **Siguiente:** según uso real. Puente probable: códigos de salida para pipelines (`--fail-on-overlap`). El modelo de matching se mantiene estable salvo que haga falta.
 
+## Qué no hace RupuData
+
+- determinar propiedad legal ni certificar copyright
+- garantizar que un dataset es legalmente seguro
+- detectar toda forma de contaminación de benchmarks
+- afirmar comprensión semántica de near-duplicates
+- reemplazar scanners de licencia o frameworks a gran escala
+
 ## Contrato de auditoría técnica
 
-Los reportes JSON permiten que un tercero reproduzca el hallazgo:
+Para quien necesita reproducir el hallazgo con exactitud. Los reportes JSON permiten auditar el método:
 
 ```text
 input → configuration → method → result
@@ -128,7 +130,7 @@ input → configuration → method → result
 | `field_text` | `method.field` explícito (`--text-field`) | `text_exact_v1` / `text_normalized_v1` |
 | `extracted_text` | `text_extraction` (p. ej. first_non_empty) | `text_exact_v1` / `text_normalized_v1` |
 
-Las specs `text_*` definen cómo se hashea un texto plano. No definen de dónde salió ese texto.
+Las specs `text_*` definen cómo se hashea un texto plano. No definen de dónde salió ese texto — el comando declara la fuente.
 
 ### Vocabulario por comando
 
@@ -160,14 +162,6 @@ Near-duplicates usan otra prep (`near_text_v1`). Solo similitud léxica.
 ```bash
 rupudata scan dataset.parquet --skip-near-duplicates
 ```
-
-## Qué no hace RupuData
-
-- determinar propiedad legal ni certificar copyright
-- garantizar que un dataset es legalmente seguro
-- detectar toda forma de contaminación de benchmarks
-- afirmar comprensión semántica de near-duplicates
-- reemplazar scanners de licencia o frameworks a gran escala
 
 ## Desarrollo
 
