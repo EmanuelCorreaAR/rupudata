@@ -48,14 +48,15 @@ def test_compare_train_eval_overlap() -> None:
         for m in report.result.matches.normalized
     }
     assert by_rows[(0, 0)].also_exact is True
-    assert by_rows[(0, 0)].differing_fields is None or by_rows[(0, 0)].differing_fields == []
+    assert by_rows[(0, 0)].differing_fields is None
+    assert by_rows[(0, 0)].difference is None
     only_norm = by_rows[(2, 2)]
     assert only_norm.also_exact is False
     assert only_norm.differing_fields
     assert only_norm.differing_fields[0].field == "text"
     assert "shared after strip" in only_norm.differing_fields[0].a
     assert only_norm.differing_fields[0].b == "shared after strip"
-    assert any("differing_fields" in n for n in report.notes)
+    assert any("Exact evidence" in n for n in report.notes)
 
 
 def test_compare_identical_datasets(tmp_path: Path) -> None:
@@ -99,7 +100,15 @@ def test_compare_cli(tmp_path: Path) -> None:
     assert payload["method"]["fingerprint"] == "normalized_record_multiset_sha256"
     assert payload["result"]["matches"]["exact"][0]["dataset_a_record"] == 0
     assert payload["result"]["matches"]["exact"][0]["dataset_b_record"] == 0
+    assert "also_exact" not in payload["result"]["matches"]["exact"][0]
+    assert "differing_fields" not in payload["result"]["matches"]["exact"][0]
     assert len(payload["result"]["matches"]["normalized"]) == 2
+    also_exact_norm = next(
+        m
+        for m in payload["result"]["matches"]["normalized"]
+        if m["also_exact"] is True
+    )
+    assert "differing_fields" not in also_exact_norm
     norm_only = next(
         m
         for m in payload["result"]["matches"]["normalized"]

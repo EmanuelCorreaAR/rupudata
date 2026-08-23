@@ -307,6 +307,16 @@ class ValueDifference(BaseModel):
 
 
 class CompareMatchItem(BaseModel):
+    """One compare evidence pair (serialized with ``exclude_none``).
+
+    Shape rules:
+    - ``matches.exact``: row indices (+ ``field`` in field_text mode). No
+      ``also_exact``, ``differing_fields``, or ``difference``.
+    - ``matches.normalized``: always includes ``also_exact``. When
+      ``also_exact`` is false, full_record adds ``differing_fields`` and
+      field_text adds ``difference``; when true, both diffs are omitted.
+    """
+
     dataset_a_record: int
     dataset_b_record: int
     field: Optional[str] = None

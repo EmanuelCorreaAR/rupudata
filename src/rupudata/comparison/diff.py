@@ -295,7 +295,8 @@ def compare_datasets(
             NOTE_NOT_CONTAMINATION,
             NOTE_ROW_INDICES,
             "Full-record overlap: all fields participate in matching.",
-            "Normalized matches include also_exact; differing_fields only when also_exact is false.",
+            "Exact evidence: row pairs only (no also_exact / differing_fields).",
+            "Normalized evidence: always also_exact; differing_fields only when also_exact is false.",
         ]
     else:
         method = CompareMethod(
@@ -317,7 +318,8 @@ def compare_datasets(
             NOTE_NOT_CONTAMINATION,
             NOTE_ROW_INDICES,
             f"Field-text overlap compares only column '{text_field}'; other fields do not affect matching.",
-            "Normalized matches include also_exact; difference only when also_exact is false.",
+            "Exact evidence: row pairs only (no also_exact / difference).",
+            "Normalized evidence: always also_exact; difference only when also_exact is false.",
         ]
 
     return CompareReport(

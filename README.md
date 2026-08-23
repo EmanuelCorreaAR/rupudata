@@ -58,6 +58,8 @@ rupudata compare examples/train.jsonl examples/eval.jsonl
 
 Compares **full records** by default (`unit=full_record`). With `--text-field NAME`, compares that column via `text_exact_v1` / `text_normalized_v1` (`unit=field_text`). Cap evidence with `--max-evidence`.
 
+Match evidence: `exact` lists row pairs only; `normalized` always includes `also_exact`, and adds `differing_fields` (full record) or `difference` (field text) only when `also_exact` is false — no empty diff arrays.
+
 ```bash
 rupudata compare examples/train.jsonl examples/eval.jsonl --text-field text
 ```

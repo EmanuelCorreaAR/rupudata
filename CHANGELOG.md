@@ -1,7 +1,10 @@
 # Changelog
 
-## [0.6.1] - 2026-08-23
+## [0.6.2] - 2026-08-23
+### Changed
+- Formalize compare match evidence shape: exact omits `also_exact`/diffs; normalized always has `also_exact` and includes `differing_fields`/`difference` only when `also_exact` is false
 
+## [0.6.1] - 2026-08-23
 ### Changed
 - Unify `method.unit` as matching category: `full_record` | `field_text` | `extracted_text`
 - Compare text mode exposes `method.field`; evidence uses `difference` (not `differing_fields`)
