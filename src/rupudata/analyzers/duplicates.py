@@ -6,14 +6,14 @@ from collections import Counter
 
 import polars as pl
 
-from rupudata.core.models import ExactDuplicates
+from rupudata.core.models import ExactDuplicateResult
 from rupudata.core.normalization import hash_record
 
 
-def analyze_exact_duplicates(df: pl.DataFrame) -> ExactDuplicates:
+def analyze_exact_duplicates(df: pl.DataFrame) -> ExactDuplicateResult:
     total = df.height
     if total == 0:
-        return ExactDuplicates(
+        return ExactDuplicateResult(
             total_records=0,
             unique_records=0,
             duplicate_records=0,
@@ -26,7 +26,7 @@ def analyze_exact_duplicates(df: pl.DataFrame) -> ExactDuplicates:
     duplicate_records = total - unique
     rate = duplicate_records / total if total else 0.0
 
-    return ExactDuplicates(
+    return ExactDuplicateResult(
         total_records=total,
         unique_records=unique,
         duplicate_records=duplicate_records,

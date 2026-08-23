@@ -24,7 +24,7 @@ from typing import Any, Iterable
 
 import polars as pl
 
-from rupudata.core.models import MinHashInfo, NearDuplicates
+from rupudata.core.models import MinHashInfo, NearDuplicateMethod, NearDuplicateResult
 from rupudata.core.normalization import hash_record
 
 
@@ -38,6 +38,14 @@ class NearDuplicateConfig:
     num_perm: int = 64
     seed: int = 42
     enabled: bool = True
+
+
+@dataclass(frozen=True)
+class NearDuplicateAnalysis:
+    """Method actually executed + numeric result for the audit contract."""
+
+    method: NearDuplicateMethod
+    result: NearDuplicateResult
 
 
 def record_text(record: dict[str, Any]) -> str:
@@ -144,21 +152,17 @@ def _all_pairs(n: int) -> Iterable[tuple[int, int]]:
 def analyze_near_duplicates(
     df: pl.DataFrame,
     config: NearDuplicateConfig | None = None,
-) -> NearDuplicates:
+) -> NearDuplicateAnalysis:
     cfg = config or NearDuplicateConfig()
     total = df.height
 
     if not cfg.enabled or total == 0:
-        return NearDuplicates(
-            enabled=cfg.enabled,
-            threshold=cfg.threshold,
-            shingle_size=cfg.shingle_size,
-            pairs=0,
-            records_flagged=0,
-            record_rate=0.0,
-            similarity="character_shingles+jaccard",
-            candidate_generation="disabled" if not cfg.enabled else "none",
-            minhash=MinHashInfo(enabled=False, num_perm=None),
+        return NearDuplicateAnalysis(
+            method=NearDuplicateMethod(
+                candidate_generation="disabled" if not cfg.enabled else "none",
+                minhash=MinHashInfo(enabled=False, num_perm=None),
+            ),
+            result=NearDuplicateResult(pairs=0, records_flagged=0, record_rate=0.0),
         )
 
     rows = list(df.iter_rows(named=True))
@@ -190,14 +194,14 @@ def analyze_near_duplicates(
             flagged.add(j)
 
     rate = len(flagged) / total if total else 0.0
-    return NearDuplicates(
-        enabled=True,
-        threshold=cfg.threshold,
-        shingle_size=cfg.shingle_size,
-        pairs=near_pairs,
-        records_flagged=len(flagged),
-        record_rate=round(rate, 6),
-        similarity="character_shingles+jaccard",
-        candidate_generation=candidate_generation,
-        minhash=minhash,
+    return NearDuplicateAnalysis(
+        method=NearDuplicateMethod(
+            candidate_generation=candidate_generation,
+            minhash=minhash,
+        ),
+        result=NearDuplicateResult(
+            pairs=near_pairs,
+            records_flagged=len(flagged),
+            record_rate=round(rate, 6),
+        ),
     )

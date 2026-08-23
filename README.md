@@ -14,7 +14,7 @@ RupuData provides **technical signals, not legal certification.**
 
 ## Status
 
-`0.3.1` — intentionally small, useful per release.
+`0.3.2` — intentionally small, useful per release.
 
 What works today:
 
@@ -24,7 +24,7 @@ What works today:
 - Exact duplicate detection (normalized record hashing)
 - Near-duplicate detection (character shingles + Jaccard; MinHash/LSH for larger sets)
 - `rupudata compare` — exact and normalized overlap between two datasets
-- Rich terminal report + machine-readable JSON
+- Machine-readable **technical audit contract** JSON (`input → configuration → method → result`)
 
 Not in this release (on purpose):
 
@@ -55,40 +55,66 @@ rupudata scan examples/near_dupes.jsonl --near-duplicate-threshold 0.85
 rupudata compare examples/train.jsonl examples/eval.jsonl
 ```
 
-### Near-duplicate methodology
+## Technical audit contract
 
-1. Take comparable text (`text` column if present, otherwise joined string fields).
-2. Build character shingles (default size 5).
-3. Find candidate pairs (all pairs if ≤250 unique-scale rows; otherwise MinHash + LSH).
-4. Keep pairs with Jaccard ≥ threshold that are **not** exact normalized duplicates.
+JSON reports are shaped so a third party can reproduce the finding:
 
-This is **lexical** similarity. It will not claim two paraphrases are duplicates.
+```text
+input → configuration → method → result
+```
 
-The JSON report records **what the engine actually ran**, not only the CLI defaults:
+Example (`scan`):
 
 ```json
-"near_duplicates": {
-  "similarity": "character_shingles+jaccard",
-  "candidate_generation": "pairwise",
-  "minhash": {
-    "enabled": false,
-    "num_perm": null
+{
+  "contract": "technical_audit",
+  "disclaimer": "Technical signals, not legal certification.",
+  "input": { "rows": 5, "format": "jsonl", "path": "..." },
+  "configuration": {
+    "near_duplicates": {
+      "enabled": true,
+      "threshold": 0.85,
+      "shingle_size": 5,
+      "num_perm": 64
+    }
+  },
+  "method": {
+    "fingerprint": "normalized_record_multiset_sha256",
+    "exact_duplicates": "normalized_record_sha256",
+    "near_duplicates": {
+      "similarity": "character_shingles+jaccard",
+      "candidate_generation": "pairwise",
+      "minhash": { "enabled": false, "num_perm": null }
+    }
+  },
+  "result": {
+    "fingerprint": "rupu:…",
+    "exact_duplicates": { "duplicate_records": 0, "duplicate_rate": 0.0 },
+    "near_duplicates": { "pairs": 1, "records_flagged": 2, "record_rate": 0.4 }
   }
 }
 ```
 
-- Small datasets (≤250 rows): `candidate_generation` is `pairwise`; MinHash is off (`num_perm` is `null`).
-- Larger datasets: `candidate_generation` is `minhash_lsh`; `minhash.enabled` is `true` and `num_perm` is the value that was used (e.g. `64`).
+- `configuration` = what you asked for (CLI intent).
+- `method` = what actually ran (`pairwise` vs `minhash_lsh`; `num_perm` only when MinHash ran).
+- `result` = reproducible numeric evidence under that method.
+
+This is intentionally **not** a legal opinion.
+
+### Near-duplicate methodology
+
+1. Take comparable text (`text` column if present, otherwise joined string fields).
+2. Build character shingles (default size 5).
+3. Find candidate pairs (all pairs if ≤250 rows; otherwise MinHash + LSH).
+4. Keep pairs with Jaccard ≥ threshold that are **not** exact normalized duplicates.
+
+This is **lexical** similarity. It will not claim two paraphrases are duplicates.
 
 `--num-perm` only affects scans that take the MinHash/LSH path.
-
-Skip near-dupes when you only need exact stats:
 
 ```bash
 rupudata scan dataset.parquet --skip-near-duplicates
 ```
-
-JSON reports:
 
 ```bash
 rupudata scan examples/example.jsonl -o reports/audit.json

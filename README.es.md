@@ -14,7 +14,7 @@ RupuData ofrece **señales técnicas, no certificación legal.**
 
 ## Estado
 
-`0.3.1` — deliberadamente chico; cada release aporta algo útil.
+`0.3.2` — deliberadamente chico; cada release aporta algo útil.
 
 Qué funciona hoy:
 
@@ -24,7 +24,7 @@ Qué funciona hoy:
 - Detección de duplicados exactos (hash de registros normalizados)
 - Detección de near-duplicates (character shingles + Jaccard; MinHash/LSH en sets más grandes)
 - `rupudata compare` — overlap exacto y normalizado entre dos datasets
-- Reporte Rich en terminal + JSON estructurado
+- JSON como **contrato de auditoría técnica** (`input → configuration → method → result`)
 
 Qué no entra en este release (a propósito):
 
@@ -55,6 +55,52 @@ rupudata scan examples/near_dupes.jsonl --near-duplicate-threshold 0.85
 rupudata compare examples/train.jsonl examples/eval.jsonl
 ```
 
+## Contrato de auditoría técnica
+
+Los reportes JSON están pensados para que un tercero pueda reproducir el hallazgo:
+
+```text
+input → configuration → method → result
+```
+
+Ejemplo (`scan`):
+
+```json
+{
+  "contract": "technical_audit",
+  "disclaimer": "Technical signals, not legal certification.",
+  "input": { "rows": 5, "format": "jsonl", "path": "..." },
+  "configuration": {
+    "near_duplicates": {
+      "enabled": true,
+      "threshold": 0.85,
+      "shingle_size": 5,
+      "num_perm": 64
+    }
+  },
+  "method": {
+    "fingerprint": "normalized_record_multiset_sha256",
+    "exact_duplicates": "normalized_record_sha256",
+    "near_duplicates": {
+      "similarity": "character_shingles+jaccard",
+      "candidate_generation": "pairwise",
+      "minhash": { "enabled": false, "num_perm": null }
+    }
+  },
+  "result": {
+    "fingerprint": "rupu:…",
+    "exact_duplicates": { "duplicate_records": 0, "duplicate_rate": 0.0 },
+    "near_duplicates": { "pairs": 1, "records_flagged": 2, "record_rate": 0.4 }
+  }
+}
+```
+
+- `configuration` = lo que pediste (intención del CLI).
+- `method` = lo que corrió de verdad (`pairwise` vs `minhash_lsh`; `num_perm` solo si MinHash corrió).
+- `result` = evidencia numérica reproducible bajo ese método.
+
+Esto **no** es una opinión legal.
+
 ### Metodología de near-duplicates
 
 1. Tomar texto comparable (columna `text` si existe; si no, campos string unidos).
@@ -64,31 +110,11 @@ rupudata compare examples/train.jsonl examples/eval.jsonl
 
 Esto mide similitud **léxica**. No afirma que dos paráfrasis sean duplicados.
 
-El reporte JSON documenta **qué corrió el motor de verdad**, no solo los defaults del CLI:
-
-```json
-"near_duplicates": {
-  "similarity": "character_shingles+jaccard",
-  "candidate_generation": "pairwise",
-  "minhash": {
-    "enabled": false,
-    "num_perm": null
-  }
-}
-```
-
-- Datasets chicos (≤250 filas): `candidate_generation` es `pairwise`; MinHash queda apagado (`num_perm` es `null`).
-- Datasets más grandes: `candidate_generation` es `minhash_lsh`; `minhash.enabled` es `true` y `num_perm` es el valor usado (p. ej. `64`).
-
 `--num-perm` solo afecta scans que toman el camino MinHash/LSH.
-
-Omitir near-dupes si solo necesitás stats exactas:
 
 ```bash
 rupudata scan dataset.parquet --skip-near-duplicates
 ```
-
-Reportes JSON:
 
 ```bash
 rupudata scan examples/example.jsonl -o reports/audit.json

@@ -26,26 +26,27 @@ def test_exact_vs_normalized_hash_differs_on_whitespace() -> None:
 
 def test_compare_train_eval_overlap() -> None:
     report = compare_datasets(TRAIN, EVAL)
-    assert report.dataset_a.rows == 4
-    assert report.dataset_b.rows == 4
-    assert report.exact_overlap.shared_records == 1
-    assert report.normalized_overlap.shared_records == 2
-    assert report.exact_overlap.only_in_a == 3
-    assert report.exact_overlap.only_in_b == 3
-    assert report.dataset_a.fingerprint.startswith("rupu:")
-    assert report.dataset_b.fingerprint.startswith("rupu:")
-    assert report.dataset_a.fingerprint != report.dataset_b.fingerprint
+    assert report.contract == "technical_audit"
+    assert report.input.dataset_a.rows == 4
+    assert report.input.dataset_b.rows == 4
+    assert report.result.exact_overlap.shared_records == 1
+    assert report.result.normalized_overlap.shared_records == 2
+    assert report.result.exact_overlap.only_in_a == 3
+    assert report.result.exact_overlap.only_in_b == 3
+    assert report.input.dataset_a.fingerprint.startswith("rupu:")
+    assert report.input.dataset_b.fingerprint.startswith("rupu:")
+    assert report.input.dataset_a.fingerprint != report.input.dataset_b.fingerprint
 
 
 def test_compare_identical_datasets(tmp_path: Path) -> None:
     path = tmp_path / "same.jsonl"
     path.write_text('{"text": "a"}\n{"text": "b"}\n', encoding="utf-8")
     report = compare_datasets(path, path)
-    assert report.exact_overlap.shared_records == 2
-    assert report.normalized_overlap.shared_records == 2
-    assert report.exact_overlap.only_in_a == 0
-    assert report.exact_overlap.only_in_b == 0
-    assert report.dataset_a.fingerprint == report.dataset_b.fingerprint
+    assert report.result.exact_overlap.shared_records == 2
+    assert report.result.normalized_overlap.shared_records == 2
+    assert report.result.exact_overlap.only_in_a == 0
+    assert report.result.exact_overlap.only_in_b == 0
+    assert report.input.dataset_a.fingerprint == report.input.dataset_b.fingerprint
 
 
 def test_compare_cli(tmp_path: Path) -> None:
@@ -55,5 +56,7 @@ def test_compare_cli(tmp_path: Path) -> None:
     assert "Exact overlap" in result.output
     assert "Normalized overlap" in result.output
     payload = json.loads(out.read_text(encoding="utf-8"))
-    assert payload["exact_overlap"]["shared_records"] == 1
-    assert payload["normalized_overlap"]["shared_records"] == 2
+    assert payload["contract"] == "technical_audit"
+    assert payload["result"]["exact_overlap"]["shared_records"] == 1
+    assert payload["result"]["normalized_overlap"]["shared_records"] == 2
+    assert "method" in payload

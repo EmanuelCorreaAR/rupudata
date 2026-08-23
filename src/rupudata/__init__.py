@@ -1,3 +1,3 @@
 """RupuData — local-first CLI for inspecting AI datasets."""
 
-__version__ = "0.3.1"
+__version__ = "0.3.2"

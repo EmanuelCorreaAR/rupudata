@@ -64,18 +64,23 @@ def test_exact_duplicates_on_example() -> None:
 
 def test_scan_jsonl_writes_report(tmp_path: Path) -> None:
     report = scan_dataset(EXAMPLES)
-    assert report.dataset.format == "jsonl"
-    assert report.dataset.rows == 5
-    assert report.dataset.fingerprint.startswith("rupu:")
-    assert "text" in report.dataset.columns
-    assert "source" in report.dataset.columns
+    assert report.contract == "technical_audit"
+    assert report.input.format == "jsonl"
+    assert report.input.rows == 5
+    assert report.result.fingerprint.startswith("rupu:")
+    assert "text" in report.input.columns
+    assert "source" in report.input.columns
 
     out = tmp_path / "report.json"
     write_json_report(report, out)
     payload = json.loads(out.read_text(encoding="utf-8"))
     assert payload["tool"] == "rupudata"
-    assert payload["exact_duplicates"]["duplicate_records"] == 2
-    assert "near_duplicates" in payload
+    assert payload["contract"] == "technical_audit"
+    assert "input" in payload
+    assert "configuration" in payload
+    assert "method" in payload
+    assert "result" in payload
+    assert payload["result"]["exact_duplicates"]["total_records"] == 5
 
 
 def test_scan_parquet(tmp_path: Path) -> None:
@@ -88,13 +93,13 @@ def test_scan_parquet(tmp_path: Path) -> None:
     ).write_parquet(path)
 
     report = scan_dataset(path)
-    assert report.dataset.format == "parquet"
-    assert report.dataset.rows == 3
-    assert report.exact_duplicates.unique_records == 2
-    assert report.exact_duplicates.duplicate_records == 1
+    assert report.input.format == "parquet"
+    assert report.input.rows == 3
+    assert report.result.exact_duplicates.unique_records == 2
+    assert report.result.exact_duplicates.duplicate_records == 1
 
 
 def test_same_dataset_same_fingerprint(tmp_path: Path) -> None:
     a = scan_dataset(EXAMPLES)
     b = scan_dataset(EXAMPLES)
-    assert a.dataset.fingerprint == b.dataset.fingerprint
+    assert a.result.fingerprint == b.result.fingerprint
