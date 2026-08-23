@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.5.0] - 2026-08-23
+### Removed
+- Deprecated `method.comparable_fields` alias (use `method.text_extraction.candidate_fields`)
+### Changed
+- Benchmark matching specs are now `text_exact_v1` / `text_normalized_v1` (extracted text unit), distinct from full-record `record_*_v1`
+
 ## [0.4.7] - 2026-08-23
 ### Changed
 - Document that "exact" is command-specific: scan `exact_duplicates` uses `record_normalized_v1`; compare `exact_overlap` uses `record_exact_v1`

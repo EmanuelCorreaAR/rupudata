@@ -28,11 +28,13 @@ NOTE_NOT_CONTAMINATION = (
 )
 NOTE_ROW_INDICES = "Row indices in evidence (when present) are 0-based."
 NOTE_EXACT_VOCABULARY = (
-    "The word 'exact' is command-specific: scan exact_duplicates uses "
-    "record_normalized_v1 (same transforms as the fingerprint). "
-    "compare exact_overlap uses record_exact_v1 (no strip). "
-    "compare/benchmark normalized_* use record_normalized_v1. "
-    "'exact' does not mean the same operation in every command."
+    "Matching units are command-specific: "
+    "scan exact_duplicates → record_normalized_v1; "
+    "compare exact_overlap → record_exact_v1; "
+    "compare normalized_overlap → record_normalized_v1; "
+    "benchmark-check exact/normalized → text_exact_v1 / text_normalized_v1 "
+    "(extracted comparison text after text_extraction). "
+    "The word 'exact' does not mean the same operation in every command."
 )
 
 
@@ -104,9 +106,57 @@ class NearDuplicateTextPrepSpec(BaseModel):
     )
 
 
+class TextExactSpec(BaseModel):
+    """Exact hash of one extracted comparison text (no strip).
+
+    Same string transforms as ``record_exact_v1``, but the unit is the text
+    chosen by ``text_extraction`` (not the full record).
+    """
+
+    id: str = "text_exact_v1"
+    unit: str = "extracted_comparison_text"
+    string_strip: bool = False
+    collapse_internal_whitespace: bool = False
+    case_fold: bool = False
+    unicode_normalize: Optional[str] = None
+    serialization: str = "json_utf8_compact_sorted_keys_on_{text}"
+    hash: str = "sha256"
+    notes: list[str] = Field(
+        default_factory=lambda: [
+            "Applies after text_extraction (one text per record).",
+            "String transforms match record_exact_v1; unit is not the full record.",
+        ]
+    )
+
+
+class TextNormalizedSpec(BaseModel):
+    """Normalized hash of one extracted comparison text (strip only).
+
+    Same string transforms as ``record_normalized_v1``, but the unit is the
+    text chosen by ``text_extraction`` (not the full record).
+    """
+
+    id: str = "text_normalized_v1"
+    unit: str = "extracted_comparison_text"
+    string_strip: bool = True
+    collapse_internal_whitespace: bool = False
+    case_fold: bool = False
+    unicode_normalize: Optional[str] = None
+    serialization: str = "json_utf8_compact_sorted_keys_on_{text}"
+    hash: str = "sha256"
+    notes: list[str] = Field(
+        default_factory=lambda: [
+            "Applies after text_extraction (one text per record).",
+            "String transforms match record_normalized_v1; unit is not the full record.",
+        ]
+    )
+
+
 RECORD_NORMALIZATION_V1 = RecordNormalizationSpec()
 RECORD_EXACT_V1 = RecordExactSpec()
 NEAR_TEXT_PREP_V1 = NearDuplicateTextPrepSpec()
+TEXT_EXACT_V1 = TextExactSpec()
+TEXT_NORMALIZED_V1 = TextNormalizedSpec()
 
 
 # --- scan ------------------------------------------------------------------
@@ -321,24 +371,13 @@ class TextExtractionSpec(BaseModel):
 
 class BenchmarkMethod(BaseModel):
     text_extraction: TextExtractionSpec = Field(default_factory=TextExtractionSpec)
-    comparable_fields: list[str] = Field(
-        default_factory=lambda: ["question", "problem", "prompt", "text"],
-        description=(
-            "Deprecated alias of text_extraction.candidate_fields "
-            "(kept for consumers of 0.4.0–0.4.2; remove in 0.5.0)."
-        ),
-    )
     fingerprint: str = FINGERPRINT_METHOD_ID
     row_index_base: int = ROW_INDEX_BASE_DEFAULT
-    exact: str = "hash of extracted comparison text without strip (record_exact_v1 on {text})"
-    normalized: str = (
-        "hash of extracted comparison text with strip (record_normalized_v1 on {text})"
-    )
+    exact: str = "text_exact_v1 (extracted comparison text, no strip)"
+    normalized: str = "text_normalized_v1 (extracted comparison text, strip)"
     near_duplicate: str = "disabled"
-    record_exact: RecordExactSpec = Field(default_factory=RecordExactSpec)
-    record_normalization: RecordNormalizationSpec = Field(
-        default_factory=RecordNormalizationSpec
-    )
+    text_exact: TextExactSpec = Field(default_factory=TextExactSpec)
+    text_normalization: TextNormalizedSpec = Field(default_factory=TextNormalizedSpec)
 
 
 class MatchEvidenceItem(BaseModel):

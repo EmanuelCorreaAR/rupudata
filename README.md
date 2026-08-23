@@ -14,7 +14,7 @@ RupuData provides **technical signals, not legal certification.**
 
 ## Status
 
-`0.4.7` — intentionally small, useful per release.
+`0.5.0` — intentionally small, useful per release.
 
 What works today:
 
@@ -85,18 +85,19 @@ JSON reports are shaped so a third party can reproduce the finding:
 input → configuration → method → result
 ```
 
-`scan`, `compare`, and `benchmark-check` share this shell, the same fingerprint id (`normalized_record_multiset_sha256`), `record_normalized_v1` / `record_exact_v1` specs, 0-based row indices, and common disclaimers.
+`scan`, `compare`, and `benchmark-check` share this shell, the same fingerprint id (`normalized_record_multiset_sha256`), shared row-index rules, and common disclaimers. Matching **units** differ by command (`record_*` vs `text_*`).
 
-### Matching vocabulary (“exact” is command-specific)
+### Matching vocabulary (units are command-specific)
 
-| Command | Field | Spec |
-|---------|--------|------|
-| `scan` | `exact_duplicates` | `record_normalized_v1` (same transforms as fingerprint) |
-| `compare` | `exact_overlap` | `record_exact_v1` (no strip) |
-| `compare` | `normalized_overlap` | `record_normalized_v1` |
-| `benchmark-check` | `exact` / `normalized` | same specs on extracted `{text}` |
+| Command | Field | Spec / unit |
+|---------|--------|-------------|
+| `scan` | `exact_duplicates` | `record_normalized_v1` (full record; same transforms as fingerprint) |
+| `compare` | `exact_overlap` | `record_exact_v1` (full record, no strip) |
+| `compare` | `normalized_overlap` | `record_normalized_v1` (full record) |
+| `benchmark-check` | `exact` | `text_exact_v1` (extracted comparison text, no strip) |
+| `benchmark-check` | `normalized` | `text_normalized_v1` (extracted comparison text, strip) |
 
-Do not assume the word **exact** means the same operation in every command.
+Do not assume the word **exact** means the same operation in every command. Prefer `text_extraction.candidate_fields` (the old `comparable_fields` alias was removed in 0.5.0).
 
 Example (`scan`):
 

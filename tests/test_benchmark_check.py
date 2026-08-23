@@ -12,6 +12,7 @@ from rupudata.contamination.adapters.base import BenchmarkAdapter
 from rupudata.contamination.adapters.gsm8k import Gsm8kAdapter
 from rupudata.contamination.check import check_benchmark
 from rupudata.contamination.registry import get_adapter, list_adapters
+from rupudata.core.models import BenchmarkMethod
 
 EXAMPLES = Path(__file__).resolve().parents[1] / "examples"
 TRAIN = EXAMPLES / "train_with_gsm8k_overlap.jsonl"
@@ -23,7 +24,7 @@ def test_gsm8k_is_registered_adapter() -> None:
     assert isinstance(adapter, Gsm8kAdapter)
     assert isinstance(adapter, BenchmarkAdapter)
     assert adapter.candidate_fields()[0] == "question"
-    assert adapter.comparable_fields() == adapter.candidate_fields()
+    assert "comparable_fields" not in Gsm8kAdapter.__dict__
     assert any(a.id == "gsm8k" for a in list_adapters())
 
 
@@ -38,7 +39,9 @@ def test_gsm8k_sample_detects_exact_and_normalized_overlap() -> None:
     assert report.configuration.match_near_duplicate is False
     assert report.method.text_extraction.strategy == "first_non_empty"
     assert report.method.text_extraction.candidate_fields[0] == "question"
-    assert report.method.comparable_fields == report.method.text_extraction.candidate_fields
+    assert "comparable_fields" not in BenchmarkMethod.model_fields
+    assert report.method.text_exact.id == "text_exact_v1"
+    assert report.method.text_normalization.id == "text_normalized_v1"
     assert report.result.matches.exact
     assert report.result.matches.exact[0].field == "question"
     assert isinstance(report.result.matches.exact[0].dataset_record, int)
@@ -71,7 +74,9 @@ def test_benchmark_check_cli(tmp_path: Path) -> None:
     assert te["strategy"] == "first_non_empty"
     assert te["candidate_fields"][0] == "question"
     assert te["unit"] == "one comparison text per record"
-    assert payload["method"]["comparable_fields"] == te["candidate_fields"]
+    assert "comparable_fields" not in payload["method"]
+    assert payload["method"]["text_exact"]["id"] == "text_exact_v1"
+    assert payload["method"]["text_normalization"]["id"] == "text_normalized_v1"
     assert payload["method"]["row_index_base"] == 0
     assert payload["configuration"]["row_index_base"] == 0
     assert payload["configuration"]["max_evidence_pairs"] == 100

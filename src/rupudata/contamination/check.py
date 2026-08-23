@@ -27,8 +27,8 @@ from rupudata.core.models import (
     DatasetRef,
     MatchEvidence,
     MatchEvidenceItem,
-    RECORD_EXACT_V1,
-    RECORD_NORMALIZATION_V1,
+    TEXT_EXACT_V1,
+    TEXT_NORMALIZED_V1,
     TextExtractionSpec,
 )
 from rupudata.core.normalization import fingerprint_dataframe
@@ -96,7 +96,7 @@ def check_benchmark(
         "Pipeline: input → text extraction → exact/normalized matching → evidence → result.",
         "Interpretation of whether overlap constitutes contamination depends on context.",
         "result.matches lists concrete row pairs and the candidate field selected on the dataset side.",
-        "method.comparable_fields is a deprecated alias of method.text_extraction.candidate_fields (remove in 0.5.0).",
+        "Matching unit is extracted comparison text (text_exact_v1 / text_normalized_v1), not the full record.",
         "Near-duplicate / paraphrase / translation matching is not included in this release.",
         *adapter.notes,
     ]
@@ -127,20 +127,13 @@ def check_benchmark(
         ),
         method=BenchmarkMethod(
             text_extraction=extraction,
-            comparable_fields=list(fields),
             fingerprint=FINGERPRINT_METHOD_ID,
             row_index_base=ROW_INDEX_BASE_DEFAULT,
-            exact=(
-                "hash of extracted comparison text without strip "
-                "(record_exact_v1 on {text})"
-            ),
-            normalized=(
-                "hash of extracted comparison text with strip "
-                "(record_normalized_v1 on {text})"
-            ),
+            exact="text_exact_v1 (extracted comparison text, no strip)",
+            normalized="text_normalized_v1 (extracted comparison text, strip)",
             near_duplicate="disabled",
-            record_exact=RECORD_EXACT_V1,
-            record_normalization=RECORD_NORMALIZATION_V1,
+            text_exact=TEXT_EXACT_V1,
+            text_normalization=TEXT_NORMALIZED_V1,
         ),
         result=BenchmarkResult(
             exact_matches=exact_ev.unique_texts,

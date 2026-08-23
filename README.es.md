@@ -14,7 +14,7 @@ RupuData ofrece **señales técnicas, no certificación legal.**
 
 ## Estado
 
-`0.4.7` — deliberadamente chico; cada release aporta algo útil.
+`0.5.0` — deliberadamente chico; cada release aporta algo útil.
 
 Qué funciona hoy:
 
@@ -85,18 +85,19 @@ Los reportes JSON están pensados para que un tercero pueda reproducir el hallaz
 input → configuration → method → result
 ```
 
-`scan`, `compare` y `benchmark-check` comparten este shell, el mismo id de fingerprint (`normalized_record_multiset_sha256`), los specs `record_normalized_v1` / `record_exact_v1`, índices 0-based y disclaimers comunes.
+`scan`, `compare` y `benchmark-check` comparten este shell, el mismo id de fingerprint (`normalized_record_multiset_sha256`), reglas de índices y disclaimers comunes. Las **unidades** de matching difieren por comando (`record_*` vs `text_*`).
 
-### Vocabulario de matching (“exact” depende del comando)
+### Vocabulario de matching (la unidad depende del comando)
 
-| Comando | Campo | Spec |
-|---------|--------|------|
-| `scan` | `exact_duplicates` | `record_normalized_v1` (mismos transforms que el fingerprint) |
-| `compare` | `exact_overlap` | `record_exact_v1` (sin strip) |
-| `compare` | `normalized_overlap` | `record_normalized_v1` |
-| `benchmark-check` | `exact` / `normalized` | mismos specs sobre el `{text}` extraído |
+| Comando | Campo | Spec / unidad |
+|---------|--------|-------------|
+| `scan` | `exact_duplicates` | `record_normalized_v1` (registro completo; mismos transforms que el fingerprint) |
+| `compare` | `exact_overlap` | `record_exact_v1` (registro completo, sin strip) |
+| `compare` | `normalized_overlap` | `record_normalized_v1` (registro completo) |
+| `benchmark-check` | `exact` | `text_exact_v1` (texto extraído, sin strip) |
+| `benchmark-check` | `normalized` | `text_normalized_v1` (texto extraído, con strip) |
 
-No asumas que la palabra **exact** significa la misma operación en todos los comandos.
+No asumas que la palabra **exact** significa la misma operación en todos los comandos. Preferí `text_extraction.candidate_fields` (el alias `comparable_fields` se eliminó en 0.5.0).
 
 Ejemplo (`scan`):
 

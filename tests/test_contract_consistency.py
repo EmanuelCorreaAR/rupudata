@@ -18,6 +18,8 @@ from rupudata.core.models import (
     RECORD_EXACT_V1,
     RECORD_NORMALIZATION_V1,
     ROW_INDEX_BASE_DEFAULT,
+    TEXT_EXACT_V1,
+    TEXT_NORMALIZED_V1,
 )
 from rupudata.core.scanner import scan_dataset
 
@@ -61,10 +63,13 @@ def test_scan_compare_benchmark_share_contract_shell() -> None:
     assert scan.method.record_normalization.id == RECORD_NORMALIZATION_V1.id
     assert compare.method.record_normalization.id == RECORD_NORMALIZATION_V1.id
     assert compare.method.record_exact.id == RECORD_EXACT_V1.id
-    assert bench.method.record_normalization.id == RECORD_NORMALIZATION_V1.id
-    assert bench.method.record_exact.id == RECORD_EXACT_V1.id
+    assert bench.method.text_exact.id == TEXT_EXACT_V1.id
+    assert bench.method.text_normalization.id == TEXT_NORMALIZED_V1.id
+    assert "comparable_fields" not in bench.to_dict()["method"]
 
     assert compare.configuration.max_evidence_pairs == bench.configuration.max_evidence_pairs
     assert "NOT compare exact_overlap" in scan.method.exact_duplicates
     assert "record_exact_v1" in compare.method.exact_overlap
     assert "record_normalized_v1" in compare.method.normalized_overlap
+    assert "text_exact_v1" in bench.method.exact
+    assert "text_normalized_v1" in bench.method.normalized
