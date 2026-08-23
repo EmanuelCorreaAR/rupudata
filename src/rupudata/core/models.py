@@ -29,11 +29,11 @@ NOTE_NOT_CONTAMINATION = (
 NOTE_ROW_INDICES = "Row indices in evidence (when present) are 0-based."
 NOTE_EXACT_VOCABULARY = (
     "Matching units are command-specific: "
-    "scan exact_duplicates → record_normalized_v1; "
-    "compare exact_overlap → record_exact_v1; "
-    "compare normalized_overlap → record_normalized_v1; "
-    "benchmark-check exact/normalized → text_exact_v1 / text_normalized_v1 "
-    "(extracted comparison text after text_extraction). "
+    "scan exact_duplicates → record_normalized_v1 (full record); "
+    "compare default → record_exact_v1 / record_normalized_v1 (unit=full_record); "
+    "compare --text-field → text_exact_v1 / text_normalized_v1 (unit=field_text); "
+    "benchmark-check → text_exact_v1 / text_normalized_v1 after text_extraction. "
+    "text_* specs define how a plain text value is hashed; the text source is declared separately. "
     "The word 'exact' does not mean the same operation in every command."
 )
 
@@ -107,14 +107,14 @@ class NearDuplicateTextPrepSpec(BaseModel):
 
 
 class TextExactSpec(BaseModel):
-    """Exact hash of one extracted comparison text (no strip).
+    """How a plain text value is hashed without strip (text matching).
 
-    Same string transforms as ``record_exact_v1``, but the unit is the text
-    chosen by ``text_extraction`` (not the full record).
+    String transforms match ``record_exact_v1``. The *source* of the text
+    (explicit field vs benchmark text_extraction) is declared on ``method``,
+    not in this spec.
     """
 
     id: str = "text_exact_v1"
-    unit: str = "extracted_comparison_text"
     base_normalization: str = "record_exact_v1"
     string_strip: bool = False
     collapse_internal_whitespace: bool = False
@@ -124,22 +124,21 @@ class TextExactSpec(BaseModel):
     hash: str = "sha256"
     notes: list[str] = Field(
         default_factory=lambda: [
-            "Applies after text_extraction (one text per record).",
+            "Defines transforms + hash for one plain text value.",
             "base_normalization names the full-record spec whose string transforms are reused.",
-            "Unit is extracted comparison text, not the full record.",
+            "Text source is declared by the command method (field_text or text_extraction).",
         ]
     )
 
 
 class TextNormalizedSpec(BaseModel):
-    """Normalized hash of one extracted comparison text (strip only).
+    """How a plain text value is hashed with strip (text matching).
 
-    Same string transforms as ``record_normalized_v1``, but the unit is the
-    text chosen by ``text_extraction`` (not the full record).
+    String transforms match ``record_normalized_v1``. The *source* of the text
+    is declared on ``method``, not in this spec.
     """
 
     id: str = "text_normalized_v1"
-    unit: str = "extracted_comparison_text"
     base_normalization: str = "record_normalized_v1"
     string_strip: bool = True
     collapse_internal_whitespace: bool = False
@@ -149,9 +148,9 @@ class TextNormalizedSpec(BaseModel):
     hash: str = "sha256"
     notes: list[str] = Field(
         default_factory=lambda: [
-            "Applies after text_extraction (one text per record).",
+            "Defines transforms + hash for one plain text value.",
             "base_normalization names the full-record spec whose string transforms are reused.",
-            "Unit is extracted comparison text, not the full record.",
+            "Text source is declared by the command method (field_text or text_extraction).",
         ]
     )
 
@@ -280,22 +279,26 @@ class CompareConfiguration(BaseModel):
     match_normalized: bool = True
     max_evidence_pairs: int = DEFAULT_MAX_EVIDENCE_PAIRS
     row_index_base: int = ROW_INDEX_BASE_DEFAULT
+    text_field: Optional[str] = None
 
 
 class CompareMethod(BaseModel):
-    unit: str = "full record (all fields); not text extraction"
+    unit: str = "full_record"
+    text_field: Optional[str] = None
     exact_overlap: str = "record_exact_v1 (stable_json_sha256_no_strip)"
     normalized_overlap: str = "record_normalized_v1 (stable_json_sha256_with_strip)"
     fingerprint: str = FINGERPRINT_METHOD_ID
     row_index_base: int = ROW_INDEX_BASE_DEFAULT
-    field_diff: str = (
+    field_diff: Optional[str] = (
         "raw_equality per field; differing_fields only on normalized matches "
         "that are not also exact; display values truncated"
     )
-    record_exact: RecordExactSpec = Field(default_factory=RecordExactSpec)
-    record_normalized: RecordNormalizationSpec = Field(
+    record_exact: Optional[RecordExactSpec] = Field(default_factory=RecordExactSpec)
+    record_normalized: Optional[RecordNormalizationSpec] = Field(
         default_factory=RecordNormalizationSpec
     )
+    text_exact: Optional[TextExactSpec] = None
+    text_normalized: Optional[TextNormalizedSpec] = None
 
 
 class FieldDiff(BaseModel):
@@ -304,11 +307,18 @@ class FieldDiff(BaseModel):
     b: str
 
 
+class TextDifference(BaseModel):
+    a: str
+    b: str
+
+
 class CompareMatchItem(BaseModel):
     dataset_a_record: int
     dataset_b_record: int
+    field: Optional[str] = None
     also_exact: Optional[bool] = None
     differing_fields: list[FieldDiff] = Field(default_factory=list)
+    text_difference: Optional[TextDifference] = None
 
 
 class CompareMatchEvidence(BaseModel):
@@ -338,7 +348,7 @@ class CompareReport(BaseModel):
     notes: list[str] = Field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
-        return self.model_dump(mode="json")
+        return self.model_dump(mode="json", exclude_none=True)
 
 
 # --- benchmark-check -------------------------------------------------------

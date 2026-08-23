@@ -14,7 +14,7 @@ RupuData provides **technical signals, not legal certification.**
 
 ## Status
 
-`0.5.2` — intentionally small, useful per release.
+`0.6.0` — intentionally small, useful per release.
 
 What works today:
 
@@ -23,7 +23,7 @@ What works today:
 - Deterministic content fingerprint (`rupu:…`)
 - Exact duplicate detection (normalized record hashing)
 - Near-duplicate detection (character shingles + Jaccard; MinHash/LSH for larger sets)
-- `rupudata compare` — exact and normalized overlap between two datasets, with per-match row evidence
+- `rupudata compare` — exact and normalized overlap between two datasets, with per-match row evidence (full record or `--text-field`)
 - `rupudata benchmark-check` — exact/normalized overlap vs a benchmark reference (e.g. GSM8K sample), with per-match evidence (row + field)
 - Machine-readable **technical audit contract** JSON (`input → configuration → method → result`)
 
@@ -56,7 +56,11 @@ rupudata scan examples/near_dupes.jsonl --near-duplicate-threshold 0.85
 rupudata compare examples/train.jsonl examples/eval.jsonl
 ```
 
-Compares **full records** (all fields) under exact and normalized hashing, with row-pair evidence in `result.matches`. Normalized-only overlaps include `differing_fields` (raw values). Cap evidence with `--max-evidence`. This is not text extraction (unlike `benchmark-check`).
+Compares **full records** by default (`unit=full_record`). With `--text-field NAME`, compares that column via `text_exact_v1` / `text_normalized_v1` (`unit=field_text`). Cap evidence with `--max-evidence`.
+
+```bash
+rupudata compare examples/train.jsonl examples/eval.jsonl --text-field text
+```
 
 ### Benchmark check
 
@@ -92,12 +96,10 @@ input → configuration → method → result
 | Command | Field | Spec / unit |
 |---------|--------|-------------|
 | `scan` | `exact_duplicates` | `record_normalized_v1` (full record; same transforms as fingerprint) |
-| `compare` | `exact_overlap` | `record_exact_v1` (full record, no strip) |
-| `compare` | `normalized_overlap` | `record_normalized_v1` (full record) |
-| `benchmark-check` | `exact` | `text_exact_v1` (extracted comparison text, no strip) |
-| `benchmark-check` | `normalized` | `text_normalized_v1` (extracted comparison text, strip) |
+| `compare` | `exact_overlap` / `normalized_overlap` | `record_*` when `unit=full_record`; `text_*` when `unit=field_text` |
+| `benchmark-check` | `exact` / `normalized` | `text_*` after `text_extraction` (source ≠ field_text) |
 
-Protocol pairing: `record_exact` / `record_normalized` (full record, in `compare`) and `text_exact` / `text_normalized` (extracted text, in `benchmark-check`). Text specs declare `base_normalization` to the record spec whose string transforms they reuse.
+`text_exact_v1` / `text_normalized_v1` define how a plain text value is hashed. The text **source** is separate: explicit `--text-field`, or benchmark `text_extraction`.
 
 Example (`scan`):
 

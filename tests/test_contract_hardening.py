@@ -11,6 +11,7 @@ from rupudata.core.models import (
     ScanMethod,
     TEXT_EXACT_V1,
     TEXT_NORMALIZED_V1,
+    TextExactSpec,
 )
 from rupudata.core.normalization import hash_record_exact, hash_record_normalized
 from rupudata.core.scanner import scan_dataset
@@ -34,11 +35,10 @@ def test_record_exact_differs_from_record_normalized_on_outer_whitespace() -> No
 
 
 def test_text_exact_differs_from_text_normalized_on_outer_whitespace() -> None:
-    """text_* reuse record string transforms on extracted {text}; same whitespace invariant."""
+    """text_* reuse record string transforms on a plain {text} value."""
     padded = {"text": PADDED}
     stripped = {"text": STRIPPED}
 
-    # Implementation hashes extracted comparison text via record_* helpers on {text}.
     assert hash_record_exact(padded) != hash_record_exact(stripped)
     assert hash_record_normalized(padded) == hash_record_normalized(stripped)
 
@@ -46,8 +46,7 @@ def test_text_exact_differs_from_text_normalized_on_outer_whitespace() -> None:
     assert TEXT_NORMALIZED_V1.base_normalization == "record_normalized_v1"
     assert TEXT_EXACT_V1.string_strip is False
     assert TEXT_NORMALIZED_V1.string_strip is True
-    assert TEXT_EXACT_V1.unit == "extracted_comparison_text"
-    assert TEXT_NORMALIZED_V1.unit == "extracted_comparison_text"
+    assert "unit" not in TextExactSpec.model_fields
 
 
 def test_benchmark_method_uses_text_specs_not_record_specs() -> None:
@@ -84,6 +83,7 @@ def test_compare_and_scan_use_record_specs_not_text_specs() -> None:
     assert "text_normalized" not in scan
     assert "text_extraction" not in scan
 
+    assert compare["unit"] == "full_record"
     assert "record_exact" in compare
     assert "record_normalized" in compare
     assert "text_exact" not in compare
@@ -93,4 +93,19 @@ def test_compare_and_scan_use_record_specs_not_text_specs() -> None:
     assert "record_normalized" in ScanMethod.model_fields
     assert "text_exact" not in ScanMethod.model_fields
     assert "record_exact" in CompareMethod.model_fields
-    assert "text_exact" not in CompareMethod.model_fields
+    assert "text_exact" in CompareMethod.model_fields
+
+
+def test_compare_text_field_mode_emits_text_specs_not_record_specs() -> None:
+    report = compare_datasets(
+        EXAMPLES / "train.jsonl",
+        EXAMPLES / "eval.jsonl",
+        text_field="text",
+    )
+    method = report.to_dict()["method"]
+    assert method["unit"] == "field_text"
+    assert method["text_field"] == "text"
+    assert "text_exact" in method
+    assert "text_normalized" in method
+    assert "record_exact" not in method
+    assert "record_normalized" not in method

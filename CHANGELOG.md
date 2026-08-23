@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.6.0] - 2026-08-23
+
+### Added
+- `rupudata compare --text-field NAME` for field-level text overlap (`unit=field_text`, `text_exact_v1` / `text_normalized_v1`)
+
+### Changed
+- `text_*` specs define plain-text transforms only; text source is declared by the command (`field_text` vs `text_extraction`)
+
 ## [0.5.2] - 2026-08-23
 ### Added
 - Contract hardening tests: whitespace invariants for record_*/text_* and command-specific method specs

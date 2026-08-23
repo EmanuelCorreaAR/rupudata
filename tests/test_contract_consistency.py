@@ -73,5 +73,6 @@ def test_scan_compare_benchmark_share_contract_shell() -> None:
     assert "NOT compare exact_overlap" in scan.method.exact_duplicates
     assert "record_exact_v1" in compare.method.exact_overlap
     assert "record_normalized_v1" in compare.method.normalized_overlap
+    assert compare.method.unit == "full_record"
     assert "text_exact_v1" in bench.method.exact
     assert "text_normalized_v1" in bench.method.normalized

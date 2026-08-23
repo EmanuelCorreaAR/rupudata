@@ -37,7 +37,7 @@ def test_compare_train_eval_overlap() -> None:
     assert report.input.dataset_b.fingerprint.startswith("rupu:")
     assert report.input.dataset_a.fingerprint != report.input.dataset_b.fingerprint
     assert report.configuration.match_exact is True
-    assert report.method.unit.startswith("full record")
+    assert report.method.unit == "full_record"
     assert report.result.matches.exact
     assert report.result.matches.exact[0].dataset_a_record == 0
     assert report.result.matches.exact[0].dataset_b_record == 0
@@ -106,6 +106,95 @@ def test_compare_cli(tmp_path: Path) -> None:
         if m["also_exact"] is False
     )
     assert norm_only["differing_fields"][0]["field"] == "text"
+
+
+def test_compare_text_field_differs_from_full_record_matching(tmp_path: Path) -> None:
+    """Same text / different other fields: full-record miss, field_text hit."""
+    path_a = tmp_path / "a.jsonl"
+    path_b = tmp_path / "b.jsonl"
+    path_a.write_text(
+        '{"text": "hello world", "source": "train"}\n',
+        encoding="utf-8",
+    )
+    path_b.write_text(
+        '{"text": "hello world", "source": "evaluation"}\n',
+        encoding="utf-8",
+    )
+
+    record_report = compare_datasets(path_a, path_b)
+    text_report = compare_datasets(path_a, path_b, text_field="text")
+
+    assert record_report.method.unit == "full_record"
+    assert record_report.result.exact_overlap.shared_records == 0
+    assert record_report.result.normalized_overlap.shared_records == 0
+
+    assert text_report.method.unit == "field_text"
+    assert text_report.method.text_field == "text"
+    assert text_report.configuration.text_field == "text"
+    assert text_report.result.exact_overlap.shared_records == 1
+    assert text_report.result.normalized_overlap.shared_records == 1
+    assert text_report.method.text_exact is not None
+    assert text_report.method.text_normalized is not None
+    assert text_report.method.record_exact is None
+    assert text_report.result.matches.exact[0].field == "text"
+    assert text_report.result.matches.normalized[0].also_exact is True
+
+
+def test_compare_text_field_normalized_only_uses_text_difference(tmp_path: Path) -> None:
+    path_a = tmp_path / "a.jsonl"
+    path_b = tmp_path / "b.jsonl"
+    path_a.write_text('{"text": "  hello world  ", "id": 1}\n', encoding="utf-8")
+    path_b.write_text('{"text": "hello world", "id": 2}\n', encoding="utf-8")
+    report = compare_datasets(path_a, path_b, text_field="text")
+    assert report.result.exact_overlap.shared_records == 0
+    assert report.result.normalized_overlap.shared_records == 1
+    match = report.result.matches.normalized[0]
+    assert match.also_exact is False
+    assert match.field == "text"
+    assert match.differing_fields == []
+    assert match.text_difference is not None
+    assert "hello world" in match.text_difference.a
+    assert match.text_difference.b == "hello world"
+
+
+def test_compare_text_field_cli(tmp_path: Path) -> None:
+    path_a = tmp_path / "a.jsonl"
+    path_b = tmp_path / "b.jsonl"
+    path_a.write_text('{"text": "hello world", "source": "train"}\n', encoding="utf-8")
+    path_b.write_text(
+        '{"text": "hello world", "source": "evaluation"}\n',
+        encoding="utf-8",
+    )
+    out = tmp_path / "compare.json"
+    result = runner.invoke(
+        app,
+        [
+            "compare",
+            str(path_a),
+            str(path_b),
+            "--text-field",
+            "text",
+            "-o",
+            str(out),
+        ],
+    )
+    assert result.exit_code == 0, result.output
+    payload = json.loads(out.read_text(encoding="utf-8"))
+    assert payload["method"]["unit"] == "field_text"
+    assert payload["method"]["text_field"] == "text"
+    assert payload["method"]["text_exact"]["id"] == "text_exact_v1"
+    assert "record_exact" not in payload["method"]
+    assert payload["result"]["exact_overlap"]["shared_records"] == 1
+
+
+def test_compare_missing_text_field_errors(tmp_path: Path) -> None:
+    path = tmp_path / "x.jsonl"
+    path.write_text('{"text": "a"}\n', encoding="utf-8")
+    try:
+        compare_datasets(path, path, text_field="missing")
+        assert False, "expected ValueError"
+    except ValueError as exc:
+        assert "missing" in str(exc)
 
 
 def test_compare_max_evidence_truncates(tmp_path: Path) -> None:

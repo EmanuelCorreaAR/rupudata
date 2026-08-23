@@ -96,7 +96,7 @@ def check_benchmark(
         "Pipeline: input → text extraction → exact/normalized matching → evidence → result.",
         "Interpretation of whether overlap constitutes contamination depends on context.",
         "result.matches lists concrete row pairs and the candidate field selected on the dataset side.",
-        "Matching unit is extracted comparison text (text_exact_v1 / text_normalized_v1), not the full record.",
+        "Matching unit is plain text after text_extraction (text_exact_v1 / text_normalized_v1); source ≠ compare field_text.",
         "Near-duplicate / paraphrase / translation matching is not included in this release.",
         *adapter.notes,
     ]

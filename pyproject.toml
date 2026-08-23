@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "rupudata"
-version = "0.5.2"
+version = "0.6.0"
 description = "Open-source, local-first CLI for inspecting and auditing datasets used in AI workflows."
 readme = "README.md"
 license = "Apache-2.0"

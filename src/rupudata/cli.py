@@ -96,10 +96,20 @@ def compare(
         help="Max row-pair evidence entries per match mode (exact / normalized).",
         min=1,
     ),
+    text_field: Optional[str] = typer.Option(
+        None,
+        "--text-field",
+        help=(
+            "Compare values of this column with text_exact_v1 / text_normalized_v1 "
+            "(unit=field_text). Default: full-record matching."
+        ),
+    ),
 ) -> None:
     """Compare two datasets for exact and normalized record overlap."""
     try:
-        report = compare_datasets(path_a, path_b, max_evidence=max_evidence)
+        report = compare_datasets(
+            path_a, path_b, max_evidence=max_evidence, text_field=text_field
+        )
     except (FileNotFoundError, ValueError) as exc:
         console.print(f"[red]Error:[/red] {exc}")
         raise typer.Exit(code=1) from exc

@@ -100,6 +100,9 @@ def render_compare_terminal(
     overlap = Table(show_header=False, box=None, padding=(0, 2))
     overlap.add_column(style="bold")
     overlap.add_column()
+    overlap.add_row("Unit", report.method.unit)
+    if report.method.text_field:
+        overlap.add_row("Text field", report.method.text_field)
     overlap.add_row("Exact overlap", f"{exact.shared_records:,}")
     overlap.add_row("Normalized overlap", f"{normalized.shared_records:,}")
     overlap.add_row("Only in A (exact)", f"{exact.only_in_a:,}")
@@ -119,8 +122,17 @@ def render_compare_terminal(
         ev = Table(show_header=True, box=None, padding=(0, 2))
         ev.add_column("dataset_a_row")
         ev.add_column("dataset_b_row")
+        if report.method.text_field:
+            ev.add_column("field")
         for item in evidence:
-            ev.add_row(str(item.dataset_a_record), str(item.dataset_b_record))
+            if report.method.text_field:
+                ev.add_row(
+                    str(item.dataset_a_record),
+                    str(item.dataset_b_record),
+                    item.field or report.method.text_field,
+                )
+            else:
+                ev.add_row(str(item.dataset_a_record), str(item.dataset_b_record))
         console.print("[bold cyan]Evidence (sample)[/bold cyan]")
         console.print("─" * 30)
         console.print(ev)
@@ -131,19 +143,33 @@ def render_compare_terminal(
         diff_table = Table(show_header=True, box=None, padding=(0, 2))
         diff_table.add_column("a_row")
         diff_table.add_column("b_row")
-        diff_table.add_column("field")
-        diff_table.add_column("a")
-        diff_table.add_column("b")
-        for item in explained:
-            for d in item.differing_fields[:3]:
+        if report.method.unit == "field_text":
+            diff_table.add_column("a")
+            diff_table.add_column("b")
+            for item in explained:
+                if item.text_difference is None:
+                    continue
                 diff_table.add_row(
                     str(item.dataset_a_record),
                     str(item.dataset_b_record),
-                    d.field,
-                    d.a,
-                    d.b,
+                    item.text_difference.a,
+                    item.text_difference.b,
                 )
-        console.print("[bold cyan]Normalized-only diffs (sample)[/bold cyan]")
+            console.print("[bold cyan]Normalized-only text diffs (sample)[/bold cyan]")
+        else:
+            diff_table.add_column("field")
+            diff_table.add_column("a")
+            diff_table.add_column("b")
+            for item in explained:
+                for d in item.differing_fields[:3]:
+                    diff_table.add_row(
+                        str(item.dataset_a_record),
+                        str(item.dataset_b_record),
+                        d.field,
+                        d.a,
+                        d.b,
+                    )
+            console.print("[bold cyan]Normalized-only diffs (sample)[/bold cyan]")
         console.print("─" * 30)
         console.print(diff_table)
         console.print()
