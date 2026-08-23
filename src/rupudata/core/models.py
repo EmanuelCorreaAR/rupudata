@@ -207,15 +207,27 @@ class CompareMethod(BaseModel):
     normalized_overlap: str = "stable_json_sha256_with_strip"
     fingerprint: str = "normalized_record_multiset_sha256"
     row_index_base: int = 0
+    field_diff: str = (
+        "raw_equality per field; differing_fields only on normalized matches "
+        "that are not also exact; display values truncated"
+    )
     record_exact: RecordExactSpec = Field(default_factory=RecordExactSpec)
     record_normalization: RecordNormalizationSpec = Field(
         default_factory=RecordNormalizationSpec
     )
 
 
+class FieldDiff(BaseModel):
+    field: str
+    a: str
+    b: str
+
+
 class CompareMatchItem(BaseModel):
     dataset_a_record: int
     dataset_b_record: int
+    also_exact: Optional[bool] = None
+    differing_fields: list[FieldDiff] = Field(default_factory=list)
 
 
 class CompareMatchEvidence(BaseModel):

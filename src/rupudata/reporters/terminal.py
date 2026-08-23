@@ -126,6 +126,28 @@ def render_compare_terminal(
         console.print(ev)
         console.print()
 
+    explained = [m for m in report.result.matches.normalized if m.also_exact is False][:3]
+    if explained:
+        diff_table = Table(show_header=True, box=None, padding=(0, 2))
+        diff_table.add_column("a_row")
+        diff_table.add_column("b_row")
+        diff_table.add_column("field")
+        diff_table.add_column("a")
+        diff_table.add_column("b")
+        for item in explained:
+            for d in item.differing_fields[:3]:
+                diff_table.add_row(
+                    str(item.dataset_a_record),
+                    str(item.dataset_b_record),
+                    d.field,
+                    d.a,
+                    d.b,
+                )
+        console.print("[bold cyan]Normalized-only diffs (sample)[/bold cyan]")
+        console.print("─" * 30)
+        console.print(diff_table)
+        console.print()
+
     console.print(f"Report written to:\n[bold]{output_path}[/bold]\n")
     for note in report.notes:
         console.print(f"[dim]• {note}[/dim]")

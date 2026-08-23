@@ -14,7 +14,7 @@ RupuData provides **technical signals, not legal certification.**
 
 ## Status
 
-`0.4.4` — intentionally small, useful per release.
+`0.4.5` — intentionally small, useful per release.
 
 What works today:
 
@@ -56,7 +56,7 @@ rupudata scan examples/near_dupes.jsonl --near-duplicate-threshold 0.85
 rupudata compare examples/train.jsonl examples/eval.jsonl
 ```
 
-Compares **full records** (all fields) under exact and normalized hashing, with row-pair evidence in `result.matches`. This is not text extraction (unlike `benchmark-check`).
+Compares **full records** (all fields) under exact and normalized hashing, with row-pair evidence in `result.matches`. Normalized-only overlaps include `differing_fields` (raw values). Cap evidence with `--max-evidence`. This is not text extraction (unlike `benchmark-check`).
 
 ### Benchmark check
 

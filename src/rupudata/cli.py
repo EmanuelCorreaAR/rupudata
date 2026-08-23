@@ -90,10 +90,16 @@ def compare(
         "-o",
         help="Path for the JSON report (default: ./rupudata-compare.json).",
     ),
+    max_evidence: int = typer.Option(
+        100,
+        "--max-evidence",
+        help="Max row-pair evidence entries per match mode (exact / normalized).",
+        min=1,
+    ),
 ) -> None:
     """Compare two datasets for exact and normalized record overlap."""
     try:
-        report = compare_datasets(path_a, path_b)
+        report = compare_datasets(path_a, path_b, max_evidence=max_evidence)
     except (FileNotFoundError, ValueError) as exc:
         console.print(f"[red]Error:[/red] {exc}")
         raise typer.Exit(code=1) from exc

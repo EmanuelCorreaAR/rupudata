@@ -42,7 +42,20 @@ def test_compare_train_eval_overlap() -> None:
     assert report.result.matches.exact[0].dataset_a_record == 0
     assert report.result.matches.exact[0].dataset_b_record == 0
     assert len(report.result.matches.normalized) == 2
-    assert any("full-record" in n for n in report.notes)
+
+    by_rows = {
+        (m.dataset_a_record, m.dataset_b_record): m
+        for m in report.result.matches.normalized
+    }
+    assert by_rows[(0, 0)].also_exact is True
+    assert by_rows[(0, 0)].differing_fields == []
+    only_norm = by_rows[(2, 2)]
+    assert only_norm.also_exact is False
+    assert only_norm.differing_fields
+    assert only_norm.differing_fields[0].field == "text"
+    assert "shared after strip" in only_norm.differing_fields[0].a
+    assert only_norm.differing_fields[0].b == "shared after strip"
+    assert any("differing_fields" in n for n in report.notes)
 
 
 def test_compare_identical_datasets(tmp_path: Path) -> None:
@@ -58,15 +71,20 @@ def test_compare_identical_datasets(tmp_path: Path) -> None:
         (0, 0),
         (1, 1),
     }
+    assert all(m.also_exact is True for m in report.result.matches.normalized)
 
 
 def test_compare_cli(tmp_path: Path) -> None:
     out = tmp_path / "compare.json"
-    result = runner.invoke(app, ["compare", str(TRAIN), str(EVAL), "-o", str(out)])
+    result = runner.invoke(
+        app,
+        ["compare", str(TRAIN), str(EVAL), "-o", str(out), "--max-evidence", "50"],
+    )
     assert result.exit_code == 0, result.output
     assert "Exact overlap" in result.output
     assert "Normalized overlap" in result.output
     assert "Evidence" in result.output
+    assert "Normalized-only diffs" in result.output
     payload = json.loads(out.read_text(encoding="utf-8"))
     assert payload["contract"] == "technical_audit"
     assert payload["result"]["exact_overlap"]["shared_records"] == 1
@@ -74,7 +92,26 @@ def test_compare_cli(tmp_path: Path) -> None:
     assert "method" in payload
     assert payload["method"]["record_exact"]["string_strip"] is False
     assert payload["method"]["record_normalization"]["string_strip"] is True
+    assert "field_diff" in payload["method"]
     assert payload["configuration"]["row_index_base"] == 0
+    assert payload["configuration"]["max_evidence_pairs"] == 50
     assert payload["result"]["matches"]["exact"][0]["dataset_a_record"] == 0
     assert payload["result"]["matches"]["exact"][0]["dataset_b_record"] == 0
     assert len(payload["result"]["matches"]["normalized"]) == 2
+    norm_only = next(
+        m
+        for m in payload["result"]["matches"]["normalized"]
+        if m["also_exact"] is False
+    )
+    assert norm_only["differing_fields"][0]["field"] == "text"
+
+
+def test_compare_max_evidence_truncates(tmp_path: Path) -> None:
+    path = tmp_path / "many.jsonl"
+    lines = [f'{{"text": "row-{i}", "id": {i}}}' for i in range(5)]
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    report = compare_datasets(path, path, max_evidence=2)
+    assert report.result.exact_overlap.shared_records == 5
+    assert len(report.result.matches.exact) == 2
+    assert report.result.matches.exact_truncated is True
+    assert report.configuration.max_evidence_pairs == 2

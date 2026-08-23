@@ -1,7 +1,11 @@
 # Changelog
 
-## [0.4.4] - 2026-08-23
+## [0.4.5] - 2026-08-23
+### Added
+- Compare: `also_exact` + `differing_fields` on normalized match evidence (raw field equality)
+- CLI `--max-evidence` for compare evidence pair cap
 
+## [0.4.4] - 2026-08-23
 ### Added
 - Compare match evidence: per-pair `dataset_a_record` / `dataset_b_record` (0-based), parallel to benchmark-check
 
