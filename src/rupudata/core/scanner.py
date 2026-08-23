@@ -31,6 +31,6 @@ def scan_dataset(path: str | Path) -> ScanReport:
         exact_duplicates=exact,
         notes=[
             "RupuData provides technical signals, not legal certification.",
-            "Near-duplicate, provenance, and contamination checks are not in this release.",
+            "Near-duplicate, provenance, and benchmark adapters are not in this release.",
         ],
     )

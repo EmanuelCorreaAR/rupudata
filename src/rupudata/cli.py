@@ -8,9 +8,10 @@ from typing import Optional
 import typer
 from rich.console import Console
 
+from rupudata.comparison.diff import compare_datasets
 from rupudata.core.scanner import scan_dataset
 from rupudata.reporters.json_report import write_json_report
-from rupudata.reporters.terminal import render_terminal
+from rupudata.reporters.terminal import render_compare_terminal, render_terminal
 
 app = typer.Typer(
     name="rupudata",
@@ -41,6 +42,29 @@ def scan(
     report_path = output or Path("rupudata-report.json")
     written = write_json_report(report, report_path)
     render_terminal(report, str(written))
+
+
+@app.command("compare")
+def compare(
+    path_a: Path = typer.Argument(..., help="First dataset (JSONL or Parquet)."),
+    path_b: Path = typer.Argument(..., help="Second dataset (JSONL or Parquet)."),
+    output: Optional[Path] = typer.Option(
+        None,
+        "--output",
+        "-o",
+        help="Path for the JSON report (default: ./rupudata-compare.json).",
+    ),
+) -> None:
+    """Compare two datasets for exact and normalized record overlap."""
+    try:
+        report = compare_datasets(path_a, path_b)
+    except (FileNotFoundError, ValueError) as exc:
+        console.print(f"[red]Error:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
+
+    report_path = output or Path("rupudata-compare.json")
+    written = write_json_report(report, report_path)
+    render_compare_terminal(report, str(written))
 
 
 @app.callback()

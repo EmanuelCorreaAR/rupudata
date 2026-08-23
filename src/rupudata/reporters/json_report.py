@@ -4,11 +4,14 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import Protocol
 
-from rupudata.core.models import ScanReport
+
+class ReportLike(Protocol):
+    def to_dict(self) -> dict: ...
 
 
-def write_json_report(report: ScanReport, output_path: str | Path) -> Path:
+def write_json_report(report: ReportLike, output_path: str | Path) -> Path:
     path = Path(output_path)
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(

@@ -9,6 +9,23 @@ from typing import Any
 import polars as pl
 
 
+def _stable_value(value: Any) -> Any:
+    """Sort keys recursively without changing string content."""
+    if value is None:
+        return None
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)):
+        return value
+    if isinstance(value, str):
+        return value
+    if isinstance(value, dict):
+        return {k: _stable_value(value[k]) for k in sorted(value)}
+    if isinstance(value, (list, tuple)):
+        return [_stable_value(v) for v in value]
+    return str(value)
+
+
 def canonicalize_value(value: Any) -> Any:
     """Normalize values so equivalent content hashes the same way."""
     if value is None:
@@ -26,16 +43,32 @@ def canonicalize_value(value: Any) -> Any:
     return str(value)
 
 
-def record_canonical_bytes(record: dict[str, Any]) -> bytes:
-    canonical = {k: canonicalize_value(record[k]) for k in sorted(record)}
-    return json.dumps(canonical, ensure_ascii=False, separators=(",", ":"), sort_keys=True).encode(
+def _dump_bytes(payload: dict[str, Any]) -> bytes:
+    return json.dumps(payload, ensure_ascii=False, separators=(",", ":"), sort_keys=True).encode(
         "utf-8"
     )
 
 
+def record_exact_bytes(record: dict[str, Any]) -> bytes:
+    """Stable serialization without string stripping."""
+    return _dump_bytes({k: _stable_value(record[k]) for k in sorted(record)})
+
+
+def record_canonical_bytes(record: dict[str, Any]) -> bytes:
+    """Stable serialization after light normalization (e.g. strip)."""
+    return _dump_bytes({k: canonicalize_value(record[k]) for k in sorted(record)})
+
+
+def hash_record_exact(record: dict[str, Any]) -> str:
+    return hashlib.sha256(record_exact_bytes(record)).hexdigest()
+
+
 def hash_record(record: dict[str, Any]) -> str:
+    """Normalized record hash (used by scan/fingerprint)."""
     return hashlib.sha256(record_canonical_bytes(record)).hexdigest()
 
+
+hash_record_normalized = hash_record
 
 def fingerprint_dataframe(df: pl.DataFrame) -> str:
     """Compute a content fingerprint independent of row order.
