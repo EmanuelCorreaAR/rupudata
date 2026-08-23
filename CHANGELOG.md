@@ -4,6 +4,7 @@
 
 ### Fixed
 - Near-duplicate JSON report now states which candidate strategy ran (`pairwise` vs `minhash_lsh`) and only includes `num_perm` when MinHash was used
+- Documented that report shape in `README.md` / `README.es.md`
 
 ## [0.3.0] - 2026-08-23
 ### Added

@@ -64,6 +64,24 @@ rupudata compare examples/train.jsonl examples/eval.jsonl
 
 Esto mide similitud **léxica**. No afirma que dos paráfrasis sean duplicados.
 
+El reporte JSON documenta **qué corrió el motor de verdad**, no solo los defaults del CLI:
+
+```json
+"near_duplicates": {
+  "similarity": "character_shingles+jaccard",
+  "candidate_generation": "pairwise",
+  "minhash": {
+    "enabled": false,
+    "num_perm": null
+  }
+}
+```
+
+- Datasets chicos (≤250 filas): `candidate_generation` es `pairwise`; MinHash queda apagado (`num_perm` es `null`).
+- Datasets más grandes: `candidate_generation` es `minhash_lsh`; `minhash.enabled` es `true` y `num_perm` es el valor usado (p. ej. `64`).
+
+`--num-perm` solo afecta scans que toman el camino MinHash/LSH.
+
 Omitir near-dupes si solo necesitás stats exactas:
 
 ```bash
