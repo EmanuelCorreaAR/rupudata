@@ -14,7 +14,7 @@ RupuData provides **technical signals, not legal certification.**
 
 ## Status
 
-`0.3.3` — intentionally small, useful per release.
+`0.3.4` — intentionally small, useful per release.
 
 What works today:
 
@@ -74,7 +74,7 @@ Example (`scan`):
     "near_duplicates": {
       "enabled": true,
       "threshold": 0.85,
-      "shingle_size": 5,
+      "shingle": { "unit": "character", "size": 5 },
       "num_perm": 64
     }
   },
@@ -91,6 +91,7 @@ Example (`scan`):
     "near_duplicates": {
       "similarity": "character_shingles+jaccard",
       "candidate_generation": "pairwise",
+      "shingle": { "unit": "character", "size": 5 },
       "minhash": { "enabled": false, "num_perm": null },
       "text_prep": { "id": "near_text_v1", "lowercase": true, "collapse_whitespace": true }
     }

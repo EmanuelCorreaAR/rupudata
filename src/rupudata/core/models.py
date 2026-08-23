@@ -98,12 +98,19 @@ class ScanInput(BaseModel):
     columns: list[str] = Field(default_factory=list)
 
 
+class ShingleSpec(BaseModel):
+    """Shingle definition used for near-duplicate Jaccard similarity."""
+
+    unit: str = "character"
+    size: int = 5
+
+
 class NearDuplicateConfiguration(BaseModel):
     """Requested near-duplicate settings (CLI/config intent)."""
 
     enabled: bool = True
     threshold: float
-    shingle_size: int
+    shingle: ShingleSpec
     num_perm: int
 
 
@@ -114,6 +121,7 @@ class ScanConfiguration(BaseModel):
 class NearDuplicateMethod(BaseModel):
     similarity: str = "character_shingles+jaccard"
     candidate_generation: str
+    shingle: ShingleSpec = Field(default_factory=ShingleSpec)
     minhash: MinHashInfo
     text_prep: NearDuplicateTextPrepSpec = Field(default_factory=NearDuplicateTextPrepSpec)
 

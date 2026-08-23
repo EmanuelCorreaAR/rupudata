@@ -43,7 +43,7 @@ def scan(
         5,
         "--shingle-size",
         min=1,
-        help="Character shingle size for near-duplicate detection.",
+        help="Character shingle size for near-duplicate detection (unit is always character).",
     ),
     num_perm: int = typer.Option(
         64,

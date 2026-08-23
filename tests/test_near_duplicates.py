@@ -129,6 +129,14 @@ def test_scan_near_threshold_cli(tmp_path: Path) -> None:
     payload = json.loads(out.read_text(encoding="utf-8"))
     assert payload["contract"] == "technical_audit"
     assert payload["configuration"]["near_duplicates"]["threshold"] == 0.85
+    assert payload["configuration"]["near_duplicates"]["shingle"] == {
+        "unit": "character",
+        "size": 5,
+    }
+    assert payload["method"]["near_duplicates"]["shingle"] == {
+        "unit": "character",
+        "size": 5,
+    }
     assert payload["method"]["near_duplicates"]["candidate_generation"] == "pairwise"
     assert payload["method"]["near_duplicates"]["minhash"] == {
         "enabled": False,

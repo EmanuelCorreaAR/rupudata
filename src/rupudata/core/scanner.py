@@ -16,6 +16,7 @@ from rupudata.core.models import (
     ScanMethod,
     ScanReport,
     ScanResult,
+    ShingleSpec,
 )
 from rupudata.core.normalization import fingerprint_dataframe
 from rupudata.core.reader import file_size_bytes, read_dataset
@@ -29,6 +30,7 @@ def scan_dataset(
     dataset_path = Path(path).expanduser().resolve()
     df, fmt = read_dataset(dataset_path)
     cfg = near_config or NearDuplicateConfig()
+    shingle = ShingleSpec(unit="character", size=cfg.shingle_size)
 
     exact = analyze_exact_duplicates(df)
     near = analyze_near_duplicates(df, cfg)
@@ -49,11 +51,18 @@ def scan_dataset(
         ]
         near_method = NearDuplicateMethod(
             candidate_generation="disabled",
+            shingle=shingle,
             minhash=near.method.minhash,
         )
         near_result = NearDuplicateResult(pairs=0, records_flagged=0, record_rate=0.0)
     else:
-        near_method = near.method
+        near_method = NearDuplicateMethod(
+            similarity=near.method.similarity,
+            candidate_generation=near.method.candidate_generation,
+            shingle=shingle,
+            minhash=near.method.minhash,
+            text_prep=near.method.text_prep,
+        )
         near_result = near.result
 
     return ScanReport(
@@ -69,7 +78,7 @@ def scan_dataset(
             near_duplicates=NearDuplicateConfiguration(
                 enabled=cfg.enabled,
                 threshold=cfg.threshold,
-                shingle_size=cfg.shingle_size,
+                shingle=shingle,
                 num_perm=cfg.num_perm,
             )
         ),

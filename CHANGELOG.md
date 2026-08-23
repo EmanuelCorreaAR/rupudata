@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.3.4] - 2026-08-23
+
+### Changed
+- Near-duplicate config/method now report `shingle: { unit, size }` instead of ambiguous `shingle_size`
+
 ## [0.3.3] - 2026-08-23
 ### Added
 - Explicit `record_normalization` / `record_exact` / near-dupe `text_prep` specs in the audit JSON
