@@ -11,6 +11,7 @@ from rupudata.core.models import (
     DISCLAIMER,
     FINGERPRINT_METHOD_ID,
     NOTE_CONTRACT,
+    NOTE_EXACT_VOCABULARY,
     NOTE_NOT_CONTAMINATION,
     NOTE_ROW_INDICES,
     NOTE_TECHNICAL_SIGNALS,
@@ -35,6 +36,7 @@ def _assert_shared_shell(report) -> None:
     assert NOTE_TECHNICAL_SIGNALS in report.notes
     assert NOTE_NOT_CONTAMINATION in report.notes
     assert NOTE_ROW_INDICES in report.notes
+    assert NOTE_EXACT_VOCABULARY in report.notes
 
 
 def test_scan_compare_benchmark_share_contract_shell() -> None:
@@ -63,3 +65,6 @@ def test_scan_compare_benchmark_share_contract_shell() -> None:
     assert bench.method.record_exact.id == RECORD_EXACT_V1.id
 
     assert compare.configuration.max_evidence_pairs == bench.configuration.max_evidence_pairs
+    assert "NOT compare exact_overlap" in scan.method.exact_duplicates
+    assert "record_exact_v1" in compare.method.exact_overlap
+    assert "record_normalized_v1" in compare.method.normalized_overlap

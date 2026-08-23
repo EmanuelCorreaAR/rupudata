@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.4.7] - 2026-08-23
+### Changed
+- Document that "exact" is command-specific: scan `exact_duplicates` uses `record_normalized_v1`; compare `exact_overlap` uses `record_exact_v1`
+
 ## [0.4.6] - 2026-08-23
 ### Changed
 - Align scan / compare / benchmark-check audit contracts (shared notes, fingerprint id, row_index_base, evidence limits)

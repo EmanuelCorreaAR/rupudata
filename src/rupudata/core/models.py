@@ -27,6 +27,13 @@ NOTE_NOT_CONTAMINATION = (
     "— not a legal or scientific contamination verdict."
 )
 NOTE_ROW_INDICES = "Row indices in evidence (when present) are 0-based."
+NOTE_EXACT_VOCABULARY = (
+    "The word 'exact' is command-specific: scan exact_duplicates uses "
+    "record_normalized_v1 (same transforms as the fingerprint). "
+    "compare exact_overlap uses record_exact_v1 (no strip). "
+    "compare/benchmark normalized_* use record_normalized_v1. "
+    "'exact' does not mean the same operation in every command."
+)
 
 
 class MinHashInfo(BaseModel):
@@ -145,7 +152,8 @@ class NearDuplicateMethod(BaseModel):
 class ScanMethod(BaseModel):
     fingerprint: str = FINGERPRINT_METHOD_ID
     exact_duplicates: str = (
-        "normalized_record_sha256 (record_normalized_v1; same transforms as fingerprint)"
+        "record_normalized_v1 / normalized_record_sha256 "
+        "(NOT compare exact_overlap / record_exact_v1)"
     )
     row_index_base: int = ROW_INDEX_BASE_DEFAULT
     record_normalization: RecordNormalizationSpec = Field(

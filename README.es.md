@@ -14,7 +14,7 @@ RupuData ofrece **señales técnicas, no certificación legal.**
 
 ## Estado
 
-`0.4.6` — deliberadamente chico; cada release aporta algo útil.
+`0.4.7` — deliberadamente chico; cada release aporta algo útil.
 
 Qué funciona hoy:
 
@@ -87,6 +87,17 @@ input → configuration → method → result
 
 `scan`, `compare` y `benchmark-check` comparten este shell, el mismo id de fingerprint (`normalized_record_multiset_sha256`), los specs `record_normalized_v1` / `record_exact_v1`, índices 0-based y disclaimers comunes.
 
+### Vocabulario de matching (“exact” depende del comando)
+
+| Comando | Campo | Spec |
+|---------|--------|------|
+| `scan` | `exact_duplicates` | `record_normalized_v1` (mismos transforms que el fingerprint) |
+| `compare` | `exact_overlap` | `record_exact_v1` (sin strip) |
+| `compare` | `normalized_overlap` | `record_normalized_v1` |
+| `benchmark-check` | `exact` / `normalized` | mismos specs sobre el `{text}` extraído |
+
+No asumas que la palabra **exact** significa la misma operación en todos los comandos.
+
 Ejemplo (`scan`):
 
 ```json
@@ -104,7 +115,7 @@ Ejemplo (`scan`):
   },
   "method": {
     "fingerprint": "normalized_record_multiset_sha256",
-    "exact_duplicates": "normalized_record_sha256",
+    "exact_duplicates": "record_normalized_v1 / normalized_record_sha256 (NOT compare exact_overlap / record_exact_v1)",
     "record_normalization": {
       "id": "record_normalized_v1",
       "string_strip": true,
