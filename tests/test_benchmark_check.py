@@ -73,6 +73,9 @@ def test_benchmark_check_cli(tmp_path: Path) -> None:
     assert te["unit"] == "one comparison text per record"
     assert payload["method"]["comparable_fields"] == te["candidate_fields"]
     assert payload["method"]["row_index_base"] == 0
+    assert payload["configuration"]["row_index_base"] == 0
+    assert payload["configuration"]["max_evidence_pairs"] == 100
+    assert payload["method"]["fingerprint"] == "normalized_record_multiset_sha256"
     assert payload["result"]["matches"]["exact"]
     assert "field" in payload["result"]["matches"]["exact"][0]
     assert "dataset_record" in payload["result"]["matches"]["exact"][0]

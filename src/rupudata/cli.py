@@ -129,10 +129,18 @@ def benchmark_check(
         "-o",
         help="Path for the JSON report (default: ./rupudata-benchmark.json).",
     ),
+    max_evidence: int = typer.Option(
+        100,
+        "--max-evidence",
+        help="Max row-pair evidence entries per match mode (exact / normalized).",
+        min=1,
+    ),
 ) -> None:
     """Check text overlap between a dataset and a known benchmark reference."""
     try:
-        report = check_benchmark(path, benchmark, reference=reference)
+        report = check_benchmark(
+            path, benchmark, reference=reference, max_evidence=max_evidence
+        )
     except (FileNotFoundError, ValueError) as exc:
         console.print(f"[red]Error:[/red] {exc}")
         raise typer.Exit(code=1) from exc

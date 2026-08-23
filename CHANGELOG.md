@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.4.6] - 2026-08-23
+### Changed
+- Align scan / compare / benchmark-check audit contracts (shared notes, fingerprint id, row_index_base, evidence limits)
+
 ## [0.4.5] - 2026-08-23
 ### Added
 - Compare: `also_exact` + `differing_fields` on normalized match evidence (raw field equality)

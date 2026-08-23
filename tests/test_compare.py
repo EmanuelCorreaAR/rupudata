@@ -95,6 +95,7 @@ def test_compare_cli(tmp_path: Path) -> None:
     assert "field_diff" in payload["method"]
     assert payload["configuration"]["row_index_base"] == 0
     assert payload["configuration"]["max_evidence_pairs"] == 50
+    assert payload["method"]["fingerprint"] == "normalized_record_multiset_sha256"
     assert payload["result"]["matches"]["exact"][0]["dataset_a_record"] == 0
     assert payload["result"]["matches"]["exact"][0]["dataset_b_record"] == 0
     assert len(payload["result"]["matches"]["normalized"]) == 2

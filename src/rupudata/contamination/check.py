@@ -6,12 +6,18 @@ from pathlib import Path
 
 from rupudata import __version__
 from rupudata.contamination.matcher import (
-    DEFAULT_MAX_EVIDENCE,
     build_overlap_evidence,
     index_rows,
 )
 from rupudata.contamination.registry import get_adapter
 from rupudata.core.models import (
+    DEFAULT_MAX_EVIDENCE_PAIRS,
+    FINGERPRINT_METHOD_ID,
+    NOTE_CONTRACT,
+    NOTE_NOT_CONTAMINATION,
+    NOTE_ROW_INDICES,
+    NOTE_TECHNICAL_SIGNALS,
+    ROW_INDEX_BASE_DEFAULT,
     BenchmarkCheckReport,
     BenchmarkConfiguration,
     BenchmarkInput,
@@ -55,7 +61,7 @@ def check_benchmark(
     benchmark_id: str,
     *,
     reference: str | Path | None = None,
-    max_evidence: int = DEFAULT_MAX_EVIDENCE,
+    max_evidence: int = DEFAULT_MAX_EVIDENCE_PAIRS,
 ) -> BenchmarkCheckReport:
     adapter = get_adapter(benchmark_id)
     data_path = Path(dataset_path).expanduser().resolve()
@@ -80,13 +86,15 @@ def check_benchmark(
     )
 
     notes = [
-        "This report is a technical audit contract (input → configuration → method → result).",
+        NOTE_CONTRACT,
+        NOTE_TECHNICAL_SIGNALS,
+        NOTE_NOT_CONTAMINATION,
+        NOTE_ROW_INDICES,
         "RupuData selects one comparison text per record using the first non-empty candidate field. It does not compare all fields in a record.",
         "Pipeline: input → text extraction → exact/normalized matching → evidence → result.",
-        "RupuData detected text overlap under the configured matching methodology — not a legal or scientific contamination verdict.",
         "Interpretation of whether overlap constitutes contamination depends on context.",
-        "result.matches lists concrete row pairs (0-based) and the candidate field selected on the dataset side.",
-        "method.comparable_fields is a deprecated alias of method.text_extraction.candidate_fields.",
+        "result.matches lists concrete row pairs and the candidate field selected on the dataset side.",
+        "method.comparable_fields is a deprecated alias of method.text_extraction.candidate_fields (remove in 0.5.0).",
         "Near-duplicate / paraphrase / translation matching is not included in this release.",
         *adapter.notes,
     ]
@@ -112,10 +120,14 @@ def check_benchmark(
             match_exact=True,
             match_normalized=True,
             match_near_duplicate=False,
+            max_evidence_pairs=max_evidence,
+            row_index_base=ROW_INDEX_BASE_DEFAULT,
         ),
         method=BenchmarkMethod(
             text_extraction=extraction,
             comparable_fields=list(fields),
+            fingerprint=FINGERPRINT_METHOD_ID,
+            row_index_base=ROW_INDEX_BASE_DEFAULT,
             exact=(
                 "hash of extracted comparison text without strip "
                 "(record_exact_v1 on {text})"

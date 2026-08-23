@@ -11,8 +11,9 @@ import polars as pl
 
 from rupudata.core.normalization import hash_record, hash_record_exact
 from rupudata.core.reader import read_dataset
+from rupudata.core.models import DEFAULT_MAX_EVIDENCE_PAIRS
 
-DEFAULT_MAX_EVIDENCE = 100
+DEFAULT_MAX_EVIDENCE = DEFAULT_MAX_EVIDENCE_PAIRS
 
 
 @dataclass(frozen=True)

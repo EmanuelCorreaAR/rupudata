@@ -13,6 +13,21 @@ from pydantic import BaseModel, Field
 DISCLAIMER = "Technical signals, not legal certification."
 CONTRACT_ID = "technical_audit"
 
+# Shared vocabulary across scan / compare / benchmark-check
+FINGERPRINT_METHOD_ID = "normalized_record_multiset_sha256"
+ROW_INDEX_BASE_DEFAULT = 0
+DEFAULT_MAX_EVIDENCE_PAIRS = 100
+
+NOTE_CONTRACT = (
+    "This report is a technical audit contract (input → configuration → method → result)."
+)
+NOTE_TECHNICAL_SIGNALS = "RupuData provides technical signals, not legal certification."
+NOTE_NOT_CONTAMINATION = (
+    "Findings are technical evidence under the configured methodology "
+    "— not a legal or scientific contamination verdict."
+)
+NOTE_ROW_INDICES = "Row indices in evidence (when present) are 0-based."
+
 
 class MinHashInfo(BaseModel):
     """Whether MinHash/LSH was actually used for candidate generation."""
@@ -115,6 +130,7 @@ class NearDuplicateConfiguration(BaseModel):
 
 
 class ScanConfiguration(BaseModel):
+    row_index_base: int = ROW_INDEX_BASE_DEFAULT
     near_duplicates: NearDuplicateConfiguration
 
 
@@ -127,8 +143,11 @@ class NearDuplicateMethod(BaseModel):
 
 
 class ScanMethod(BaseModel):
-    fingerprint: str = "normalized_record_multiset_sha256"
-    exact_duplicates: str = "normalized_record_sha256"
+    fingerprint: str = FINGERPRINT_METHOD_ID
+    exact_duplicates: str = (
+        "normalized_record_sha256 (record_normalized_v1; same transforms as fingerprint)"
+    )
+    row_index_base: int = ROW_INDEX_BASE_DEFAULT
     record_normalization: RecordNormalizationSpec = Field(
         default_factory=RecordNormalizationSpec
     )
@@ -197,16 +216,16 @@ class CompareInput(BaseModel):
 class CompareConfiguration(BaseModel):
     match_exact: bool = True
     match_normalized: bool = True
-    max_evidence_pairs: int = 100
-    row_index_base: int = 0
+    max_evidence_pairs: int = DEFAULT_MAX_EVIDENCE_PAIRS
+    row_index_base: int = ROW_INDEX_BASE_DEFAULT
 
 
 class CompareMethod(BaseModel):
     unit: str = "full record (all fields); not text extraction"
-    exact_overlap: str = "stable_json_sha256_no_strip"
-    normalized_overlap: str = "stable_json_sha256_with_strip"
-    fingerprint: str = "normalized_record_multiset_sha256"
-    row_index_base: int = 0
+    exact_overlap: str = "record_exact_v1 (stable_json_sha256_no_strip)"
+    normalized_overlap: str = "record_normalized_v1 (stable_json_sha256_with_strip)"
+    fingerprint: str = FINGERPRINT_METHOD_ID
+    row_index_base: int = ROW_INDEX_BASE_DEFAULT
     field_diff: str = (
         "raw_equality per field; differing_fields only on normalized matches "
         "that are not also exact; display values truncated"
@@ -278,6 +297,8 @@ class BenchmarkConfiguration(BaseModel):
     match_exact: bool = True
     match_normalized: bool = True
     match_near_duplicate: bool = False
+    max_evidence_pairs: int = DEFAULT_MAX_EVIDENCE_PAIRS
+    row_index_base: int = ROW_INDEX_BASE_DEFAULT
 
 
 class TextExtractionSpec(BaseModel):
@@ -296,10 +317,11 @@ class BenchmarkMethod(BaseModel):
         default_factory=lambda: ["question", "problem", "prompt", "text"],
         description=(
             "Deprecated alias of text_extraction.candidate_fields "
-            "(kept for consumers of 0.4.0–0.4.2)."
+            "(kept for consumers of 0.4.0–0.4.2; remove in 0.5.0)."
         ),
     )
-    row_index_base: int = 0
+    fingerprint: str = FINGERPRINT_METHOD_ID
+    row_index_base: int = ROW_INDEX_BASE_DEFAULT
     exact: str = "hash of extracted comparison text without strip (record_exact_v1 on {text})"
     normalized: str = (
         "hash of extracted comparison text with strip (record_normalized_v1 on {text})"

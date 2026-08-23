@@ -88,6 +88,9 @@ def test_scan_jsonl_writes_report(tmp_path: Path) -> None:
     assert norm["case_fold"] is False
     assert norm["unicode_normalize"] is None
     assert payload["method"]["near_duplicates"]["text_prep"]["id"] == "near_text_v1"
+    assert payload["configuration"]["row_index_base"] == 0
+    assert payload["method"]["row_index_base"] == 0
+    assert payload["method"]["fingerprint"] == "normalized_record_multiset_sha256"
 
 
 def test_scan_parquet(tmp_path: Path) -> None:

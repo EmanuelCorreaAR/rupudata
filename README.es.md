@@ -14,7 +14,7 @@ RupuData ofrece **señales técnicas, no certificación legal.**
 
 ## Estado
 
-`0.4.5` — deliberadamente chico; cada release aporta algo útil.
+`0.4.6` — deliberadamente chico; cada release aporta algo útil.
 
 Qué funciona hoy:
 
@@ -84,6 +84,8 @@ Los reportes JSON están pensados para que un tercero pueda reproducir el hallaz
 ```text
 input → configuration → method → result
 ```
+
+`scan`, `compare` y `benchmark-check` comparten este shell, el mismo id de fingerprint (`normalized_record_multiset_sha256`), los specs `record_normalized_v1` / `record_exact_v1`, índices 0-based y disclaimers comunes.
 
 Ejemplo (`scan`):
 

@@ -11,6 +11,13 @@ import polars as pl
 
 from rupudata import __version__
 from rupudata.core.models import (
+    DEFAULT_MAX_EVIDENCE_PAIRS,
+    FINGERPRINT_METHOD_ID,
+    NOTE_CONTRACT,
+    NOTE_NOT_CONTAMINATION,
+    NOTE_ROW_INDICES,
+    NOTE_TECHNICAL_SIGNALS,
+    ROW_INDEX_BASE_DEFAULT,
     CompareConfiguration,
     CompareInput,
     CompareMatchEvidence,
@@ -31,10 +38,9 @@ from rupudata.core.normalization import (
 )
 from rupudata.core.reader import file_size_bytes, read_dataset
 
-DEFAULT_MAX_EVIDENCE = 100
+DEFAULT_MAX_EVIDENCE = DEFAULT_MAX_EVIDENCE_PAIRS
 DEFAULT_VALUE_DISPLAY_MAX = 120
 _MISSING = "<missing>"
-
 
 @dataclass(frozen=True)
 class RecordHit:
@@ -229,9 +235,11 @@ def compare_datasets(
             match_exact=True,
             match_normalized=True,
             max_evidence_pairs=max_evidence,
-            row_index_base=0,
+            row_index_base=ROW_INDEX_BASE_DEFAULT,
         ),
         method=CompareMethod(
+            fingerprint=FINGERPRINT_METHOD_ID,
+            row_index_base=ROW_INDEX_BASE_DEFAULT,
             record_exact=RECORD_EXACT_V1,
             record_normalization=RECORD_NORMALIZATION_V1,
         ),
@@ -254,13 +262,15 @@ def compare_datasets(
             ),
         ),
         notes=[
-            "This report is a technical audit contract (input → configuration → method → result).",
+            NOTE_CONTRACT,
+            NOTE_TECHNICAL_SIGNALS,
+            NOTE_NOT_CONTAMINATION,
+            NOTE_ROW_INDICES,
             "Pipeline: input → full-record hashing → exact/normalized matching → evidence → result.",
             "Overlap counts unique full records shared by both datasets under each hashing method.",
-            "result.matches lists concrete row pairs (0-based) under full-record matching — not text extraction.",
+            "result.matches lists concrete row pairs under full-record matching — not text extraction.",
             "Normalized matches include also_exact; differing_fields (raw equality) only when also_exact is false.",
-            "Normalized overlap strips leading/trailing whitespace in strings; exact does not.",
-            "This is technical overlap evidence, not a claim of benchmark contamination.",
+            "Normalized overlap uses record_normalized_v1; exact overlap uses record_exact_v1.",
             "Paraphrases, translations, and semantic near-matches are not detected.",
         ],
     )

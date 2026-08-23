@@ -14,7 +14,7 @@ RupuData provides **technical signals, not legal certification.**
 
 ## Status
 
-`0.4.5` — intentionally small, useful per release.
+`0.4.6` — intentionally small, useful per release.
 
 What works today:
 
@@ -84,6 +84,8 @@ JSON reports are shaped so a third party can reproduce the finding:
 ```text
 input → configuration → method → result
 ```
+
+`scan`, `compare`, and `benchmark-check` share this shell, the same fingerprint id (`normalized_record_multiset_sha256`), `record_normalized_v1` / `record_exact_v1` specs, 0-based row indices, and common disclaimers.
 
 Example (`scan`):
 

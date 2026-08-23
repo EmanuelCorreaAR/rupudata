@@ -8,9 +8,15 @@ from rupudata import __version__
 from rupudata.analyzers.duplicates import analyze_exact_duplicates
 from rupudata.analyzers.near_duplicates import NearDuplicateConfig, analyze_near_duplicates
 from rupudata.core.models import (
+    NOTE_CONTRACT,
+    NOTE_NOT_CONTAMINATION,
+    NOTE_ROW_INDICES,
+    NOTE_TECHNICAL_SIGNALS,
     NearDuplicateConfiguration,
     NearDuplicateMethod,
     NearDuplicateResult,
+    RECORD_NORMALIZATION_V1,
+    ROW_INDEX_BASE_DEFAULT,
     ScanConfiguration,
     ScanInput,
     ScanMethod,
@@ -37,17 +43,21 @@ def scan_dataset(
     fingerprint = fingerprint_dataframe(df)
 
     notes = [
-        "This report is a technical audit contract (input → configuration → method → result).",
-        "RupuData provides technical signals, not legal certification.",
+        NOTE_CONTRACT,
+        NOTE_TECHNICAL_SIGNALS,
+        NOTE_NOT_CONTAMINATION,
+        NOTE_ROW_INDICES,
+        "Fingerprint and exact-duplicate hashes use record_normalized_v1 (full record).",
         "Near-duplicates measure lexical similarity only — not paraphrases or translations.",
-        "Provenance and benchmark adapters are not in this release.",
     ]
     if not cfg.enabled:
         notes = [
-            "This report is a technical audit contract (input → configuration → method → result).",
-            "RupuData provides technical signals, not legal certification.",
+            NOTE_CONTRACT,
+            NOTE_TECHNICAL_SIGNALS,
+            NOTE_NOT_CONTAMINATION,
+            NOTE_ROW_INDICES,
+            "Fingerprint and exact-duplicate hashes use record_normalized_v1 (full record).",
             "Near-duplicate detection was disabled for this scan.",
-            "Provenance and benchmark adapters are not in this release.",
         ]
         near_method = NearDuplicateMethod(
             candidate_generation="disabled",
@@ -75,14 +85,19 @@ def scan_dataset(
             columns=list(df.columns),
         ),
         configuration=ScanConfiguration(
+            row_index_base=ROW_INDEX_BASE_DEFAULT,
             near_duplicates=NearDuplicateConfiguration(
                 enabled=cfg.enabled,
                 threshold=cfg.threshold,
                 shingle=shingle,
                 num_perm=cfg.num_perm,
-            )
+            ),
         ),
-        method=ScanMethod(near_duplicates=near_method),
+        method=ScanMethod(
+            row_index_base=ROW_INDEX_BASE_DEFAULT,
+            record_normalization=RECORD_NORMALIZATION_V1,
+            near_duplicates=near_method,
+        ),
         result=ScanResult(
             fingerprint=fingerprint,
             exact_duplicates=exact,
