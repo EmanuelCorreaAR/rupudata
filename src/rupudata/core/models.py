@@ -115,6 +115,7 @@ class TextExactSpec(BaseModel):
 
     id: str = "text_exact_v1"
     unit: str = "extracted_comparison_text"
+    base_normalization: str = "record_exact_v1"
     string_strip: bool = False
     collapse_internal_whitespace: bool = False
     case_fold: bool = False
@@ -124,7 +125,8 @@ class TextExactSpec(BaseModel):
     notes: list[str] = Field(
         default_factory=lambda: [
             "Applies after text_extraction (one text per record).",
-            "String transforms match record_exact_v1; unit is not the full record.",
+            "base_normalization names the full-record spec whose string transforms are reused.",
+            "Unit is extracted comparison text, not the full record.",
         ]
     )
 
@@ -138,6 +140,7 @@ class TextNormalizedSpec(BaseModel):
 
     id: str = "text_normalized_v1"
     unit: str = "extracted_comparison_text"
+    base_normalization: str = "record_normalized_v1"
     string_strip: bool = True
     collapse_internal_whitespace: bool = False
     case_fold: bool = False
@@ -147,7 +150,8 @@ class TextNormalizedSpec(BaseModel):
     notes: list[str] = Field(
         default_factory=lambda: [
             "Applies after text_extraction (one text per record).",
-            "String transforms match record_normalized_v1; unit is not the full record.",
+            "base_normalization names the full-record spec whose string transforms are reused.",
+            "Unit is extracted comparison text, not the full record.",
         ]
     )
 
@@ -206,7 +210,7 @@ class ScanMethod(BaseModel):
         "(NOT compare exact_overlap / record_exact_v1)"
     )
     row_index_base: int = ROW_INDEX_BASE_DEFAULT
-    record_normalization: RecordNormalizationSpec = Field(
+    record_normalized: RecordNormalizationSpec = Field(
         default_factory=RecordNormalizationSpec
     )
     near_duplicates: NearDuplicateMethod
@@ -289,7 +293,7 @@ class CompareMethod(BaseModel):
         "that are not also exact; display values truncated"
     )
     record_exact: RecordExactSpec = Field(default_factory=RecordExactSpec)
-    record_normalization: RecordNormalizationSpec = Field(
+    record_normalized: RecordNormalizationSpec = Field(
         default_factory=RecordNormalizationSpec
     )
 
@@ -377,7 +381,7 @@ class BenchmarkMethod(BaseModel):
     normalized: str = "text_normalized_v1 (extracted comparison text, strip)"
     near_duplicate: str = "disabled"
     text_exact: TextExactSpec = Field(default_factory=TextExactSpec)
-    text_normalization: TextNormalizedSpec = Field(default_factory=TextNormalizedSpec)
+    text_normalized: TextNormalizedSpec = Field(default_factory=TextNormalizedSpec)
 
 
 class MatchEvidenceItem(BaseModel):

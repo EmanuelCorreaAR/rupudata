@@ -242,7 +242,7 @@ def compare_datasets(
             fingerprint=FINGERPRINT_METHOD_ID,
             row_index_base=ROW_INDEX_BASE_DEFAULT,
             record_exact=RECORD_EXACT_V1,
-            record_normalization=RECORD_NORMALIZATION_V1,
+            record_normalized=RECORD_NORMALIZATION_V1,
         ),
         result=CompareResult(
             exact_overlap=OverlapStats(

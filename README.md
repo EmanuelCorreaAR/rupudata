@@ -14,7 +14,7 @@ RupuData provides **technical signals, not legal certification.**
 
 ## Status
 
-`0.5.0` — intentionally small, useful per release.
+`0.5.1` — intentionally small, useful per release.
 
 What works today:
 
@@ -97,7 +97,7 @@ input → configuration → method → result
 | `benchmark-check` | `exact` | `text_exact_v1` (extracted comparison text, no strip) |
 | `benchmark-check` | `normalized` | `text_normalized_v1` (extracted comparison text, strip) |
 
-Do not assume the word **exact** means the same operation in every command. Prefer `text_extraction.candidate_fields` (the old `comparable_fields` alias was removed in 0.5.0).
+Protocol pairing: `record_exact` / `record_normalized` (full record, in `compare`) and `text_exact` / `text_normalized` (extracted text, in `benchmark-check`). Text specs declare `base_normalization` to the record spec whose string transforms they reuse.
 
 Example (`scan`):
 
@@ -117,7 +117,7 @@ Example (`scan`):
   "method": {
     "fingerprint": "normalized_record_multiset_sha256",
     "exact_duplicates": "record_normalized_v1 / normalized_record_sha256 (NOT compare exact_overlap / record_exact_v1)",
-    "record_normalization": {
+    "record_normalized": {
       "id": "record_normalized_v1",
       "string_strip": true,
       "collapse_internal_whitespace": false,
@@ -146,7 +146,7 @@ Example (`scan`):
 
 ### What “normalized” means (fingerprint + exact duplicates)
 
-Policy id: `record_normalized_v1` (also under `method.record_normalization` in the JSON).
+Policy id: `record_normalized_v1` (also under `method.record_normalized` in the JSON).
 
 | Step | Behavior |
 |---|---|

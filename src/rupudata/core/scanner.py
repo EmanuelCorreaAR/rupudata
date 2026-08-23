@@ -98,7 +98,7 @@ def scan_dataset(
         ),
         method=ScanMethod(
             row_index_base=ROW_INDEX_BASE_DEFAULT,
-            record_normalization=RECORD_NORMALIZATION_V1,
+            record_normalized=RECORD_NORMALIZATION_V1,
             near_duplicates=near_method,
         ),
         result=ScanResult(

@@ -81,7 +81,7 @@ def test_scan_jsonl_writes_report(tmp_path: Path) -> None:
     assert "method" in payload
     assert "result" in payload
     assert payload["result"]["exact_duplicates"]["total_records"] == 5
-    norm = payload["method"]["record_normalization"]
+    norm = payload["method"]["record_normalized"]
     assert norm["id"] == "record_normalized_v1"
     assert norm["string_strip"] is True
     assert norm["collapse_internal_whitespace"] is False

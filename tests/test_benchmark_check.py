@@ -41,7 +41,9 @@ def test_gsm8k_sample_detects_exact_and_normalized_overlap() -> None:
     assert report.method.text_extraction.candidate_fields[0] == "question"
     assert "comparable_fields" not in BenchmarkMethod.model_fields
     assert report.method.text_exact.id == "text_exact_v1"
-    assert report.method.text_normalization.id == "text_normalized_v1"
+    assert report.method.text_exact.base_normalization == "record_exact_v1"
+    assert report.method.text_normalized.id == "text_normalized_v1"
+    assert report.method.text_normalized.base_normalization == "record_normalized_v1"
     assert report.result.matches.exact
     assert report.result.matches.exact[0].field == "question"
     assert isinstance(report.result.matches.exact[0].dataset_record, int)
@@ -76,7 +78,12 @@ def test_benchmark_check_cli(tmp_path: Path) -> None:
     assert te["unit"] == "one comparison text per record"
     assert "comparable_fields" not in payload["method"]
     assert payload["method"]["text_exact"]["id"] == "text_exact_v1"
-    assert payload["method"]["text_normalization"]["id"] == "text_normalized_v1"
+    assert payload["method"]["text_exact"]["base_normalization"] == "record_exact_v1"
+    assert payload["method"]["text_normalized"]["id"] == "text_normalized_v1"
+    assert payload["method"]["text_normalized"]["base_normalization"] == "record_normalized_v1"
+    assert "text_normalization" not in payload["method"]
+    assert "record_exact" not in payload["method"]
+    assert "record_normalization" not in payload["method"]
     assert payload["method"]["row_index_base"] == 0
     assert payload["configuration"]["row_index_base"] == 0
     assert payload["configuration"]["max_evidence_pairs"] == 100

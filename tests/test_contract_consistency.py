@@ -60,11 +60,13 @@ def test_scan_compare_benchmark_share_contract_shell() -> None:
     assert compare.method.row_index_base == ROW_INDEX_BASE_DEFAULT
     assert bench.method.row_index_base == ROW_INDEX_BASE_DEFAULT
 
-    assert scan.method.record_normalization.id == RECORD_NORMALIZATION_V1.id
-    assert compare.method.record_normalization.id == RECORD_NORMALIZATION_V1.id
+    assert scan.method.record_normalized.id == RECORD_NORMALIZATION_V1.id
+    assert compare.method.record_normalized.id == RECORD_NORMALIZATION_V1.id
     assert compare.method.record_exact.id == RECORD_EXACT_V1.id
     assert bench.method.text_exact.id == TEXT_EXACT_V1.id
-    assert bench.method.text_normalization.id == TEXT_NORMALIZED_V1.id
+    assert bench.method.text_normalized.id == TEXT_NORMALIZED_V1.id
+    assert bench.method.text_exact.base_normalization == "record_exact_v1"
+    assert bench.method.text_normalized.base_normalization == "record_normalized_v1"
     assert "comparable_fields" not in bench.to_dict()["method"]
 
     assert compare.configuration.max_evidence_pairs == bench.configuration.max_evidence_pairs

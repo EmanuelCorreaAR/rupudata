@@ -133,7 +133,7 @@ def check_benchmark(
             normalized="text_normalized_v1 (extracted comparison text, strip)",
             near_duplicate="disabled",
             text_exact=TEXT_EXACT_V1,
-            text_normalization=TEXT_NORMALIZED_V1,
+            text_normalized=TEXT_NORMALIZED_V1,
         ),
         result=BenchmarkResult(
             exact_matches=exact_ev.unique_texts,

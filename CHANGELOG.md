@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.5.1] - 2026-08-23
+
+### Changed
+- Benchmark: `text_normalization` → `text_normalized`; specs include `base_normalization`
+- Scan/compare: `method.record_normalization` → `method.record_normalized` (pairs with `record_exact` / `text_exact` / `text_normalized`)
+
 ## [0.5.0] - 2026-08-23
 ### Removed
 - Deprecated `method.comparable_fields` alias (use `method.text_extraction.candidate_fields`)
