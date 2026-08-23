@@ -14,7 +14,7 @@ RupuData ofrece **señales técnicas, no certificación legal.**
 
 ## Estado
 
-`0.3.2` — deliberadamente chico; cada release aporta algo útil.
+`0.3.3` — deliberadamente chico; cada release aporta algo útil.
 
 Qué funciona hoy:
 
@@ -81,10 +81,18 @@ Ejemplo (`scan`):
   "method": {
     "fingerprint": "normalized_record_multiset_sha256",
     "exact_duplicates": "normalized_record_sha256",
+    "record_normalization": {
+      "id": "record_normalized_v1",
+      "string_strip": true,
+      "collapse_internal_whitespace": false,
+      "case_fold": false,
+      "unicode_normalize": null
+    },
     "near_duplicates": {
       "similarity": "character_shingles+jaccard",
       "candidate_generation": "pairwise",
-      "minhash": { "enabled": false, "num_perm": null }
+      "minhash": { "enabled": false, "num_perm": null },
+      "text_prep": { "id": "near_text_v1", "lowercase": true, "collapse_whitespace": true }
     }
   },
   "result": {
@@ -98,6 +106,25 @@ Ejemplo (`scan`):
 - `configuration` = lo que pediste (intención del CLI).
 - `method` = lo que corrió de verdad (`pairwise` vs `minhash_lsh`; `num_perm` solo si MinHash corrió).
 - `result` = evidencia numérica reproducible bajo ese método.
+
+### Qué significa “normalized” (fingerprint + exact duplicates)
+
+Policy id: `record_normalized_v1` (también en `method.record_normalization` del JSON).
+
+| Paso | Comportamiento |
+|---|---|
+| Campos | Se incluyen **todos** (sin excluir columnas) |
+| Keys | Keys de objetos ordenadas recursivamente |
+| Strings | Solo `str.strip()` (whitespace al inicio/fin) |
+| Espacios internos | **Se conservan** — `" Hello   World "` → `"Hello   World"` |
+| Mayúsculas | **No** se pasa a minúsculas |
+| Unicode | **Sin** NFC/NFKC |
+| Serialize | JSON UTF-8 compacto, keys ordenadas |
+| Hash | SHA-256 |
+
+Fingerprint = SHA-256 sobre el **multiset ordenado** de hashes por record, luego `rupu:` + 16 hex.
+
+Near-duplicates usan **otra** prep de texto (`near_text_v1`: lowercase + colapsar whitespace). Eso **no** cambia el fingerprint.
 
 Esto **no** es una opinión legal.
 

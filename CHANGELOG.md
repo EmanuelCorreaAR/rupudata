@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.3.3] - 2026-08-23
+### Added
+- Explicit `record_normalization` / `record_exact` / near-dupe `text_prep` specs in the audit JSON
+
 ## [0.3.2] - 2026-08-23
 ### Changed
 - JSON reports now follow an explicit technical audit contract: `input → configuration → method → result`
@@ -8,7 +12,6 @@
 
 ### Fixed
 - Near-duplicate JSON report now states which candidate strategy ran (`pairwise` vs `minhash_lsh`) and only includes `num_perm` when MinHash was used
-- Documented that report shape in `README.md` / `README.es.md`
 
 ## [0.3.0] - 2026-08-23
 

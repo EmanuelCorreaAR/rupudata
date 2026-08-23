@@ -81,6 +81,13 @@ def test_scan_jsonl_writes_report(tmp_path: Path) -> None:
     assert "method" in payload
     assert "result" in payload
     assert payload["result"]["exact_duplicates"]["total_records"] == 5
+    norm = payload["method"]["record_normalization"]
+    assert norm["id"] == "record_normalized_v1"
+    assert norm["string_strip"] is True
+    assert norm["collapse_internal_whitespace"] is False
+    assert norm["case_fold"] is False
+    assert norm["unicode_normalize"] is None
+    assert payload["method"]["near_duplicates"]["text_prep"]["id"] == "near_text_v1"
 
 
 def test_scan_parquet(tmp_path: Path) -> None:

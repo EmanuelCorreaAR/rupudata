@@ -14,7 +14,7 @@ RupuData provides **technical signals, not legal certification.**
 
 ## Status
 
-`0.3.2` — intentionally small, useful per release.
+`0.3.3` — intentionally small, useful per release.
 
 What works today:
 
@@ -81,10 +81,18 @@ Example (`scan`):
   "method": {
     "fingerprint": "normalized_record_multiset_sha256",
     "exact_duplicates": "normalized_record_sha256",
+    "record_normalization": {
+      "id": "record_normalized_v1",
+      "string_strip": true,
+      "collapse_internal_whitespace": false,
+      "case_fold": false,
+      "unicode_normalize": null
+    },
     "near_duplicates": {
       "similarity": "character_shingles+jaccard",
       "candidate_generation": "pairwise",
-      "minhash": { "enabled": false, "num_perm": null }
+      "minhash": { "enabled": false, "num_perm": null },
+      "text_prep": { "id": "near_text_v1", "lowercase": true, "collapse_whitespace": true }
     }
   },
   "result": {
@@ -98,6 +106,25 @@ Example (`scan`):
 - `configuration` = what you asked for (CLI intent).
 - `method` = what actually ran (`pairwise` vs `minhash_lsh`; `num_perm` only when MinHash ran).
 - `result` = reproducible numeric evidence under that method.
+
+### What “normalized” means (fingerprint + exact duplicates)
+
+Policy id: `record_normalized_v1` (also under `method.record_normalization` in the JSON).
+
+| Step | Behavior |
+|---|---|
+| Fields | **All** record fields are included (no column exclusions) |
+| Keys | Object keys sorted recursively |
+| Strings | `str.strip()` only (leading/trailing whitespace) |
+| Internal spaces | **Kept** — `" Hello   World "` → `"Hello   World"` |
+| Case | **Not** lowercased |
+| Unicode | **No** NFC/NFKC normalization |
+| Serialize | Compact UTF-8 JSON, sorted keys |
+| Hash | SHA-256 |
+
+Fingerprint = SHA-256 over the **sorted multiset** of per-record hashes, then `rupu:` + 16 hex chars.
+
+Near-duplicates use a **different** text prep (`near_text_v1`: lowercase + collapse whitespace on the comparable text). That does **not** change the fingerprint.
 
 This is intentionally **not** a legal opinion.
 

@@ -60,3 +60,5 @@ def test_compare_cli(tmp_path: Path) -> None:
     assert payload["result"]["exact_overlap"]["shared_records"] == 1
     assert payload["result"]["normalized_overlap"]["shared_records"] == 2
     assert "method" in payload
+    assert payload["method"]["record_exact"]["string_strip"] is False
+    assert payload["method"]["record_normalization"]["string_strip"] is True

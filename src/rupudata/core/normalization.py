@@ -1,4 +1,19 @@
-"""Record normalization and deterministic dataset fingerprinting."""
+"""Record normalization and deterministic dataset fingerprinting.
+
+Record normalization policy (``record_normalized_v1``), used by fingerprint and
+exact duplicates in ``scan`` / normalized overlap in ``compare``:
+
+- Include **all** fields of the record.
+- Sort object keys recursively for stable JSON.
+- Strings: ``str.strip()`` only (leading/trailing whitespace).
+- Do **not** collapse internal whitespace, lowercase, or Unicode-normalize.
+- Serialize as compact UTF-8 JSON with sorted keys; hash with SHA-256.
+
+Example: ``\" Hello   World \"`` → ``\"Hello   World\"`` (internal spaces kept).
+
+Fingerprint: SHA-256 over the sorted multiset of per-record normalized hashes,
+then ``rupu:`` + first 16 hex chars.
+"""
 
 from __future__ import annotations
 

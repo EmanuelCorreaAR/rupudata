@@ -21,6 +21,72 @@ class MinHashInfo(BaseModel):
     num_perm: Optional[int] = None
 
 
+class RecordNormalizationSpec(BaseModel):
+    """Explicit transforms applied before hashing a full record.
+
+    Used by fingerprint and exact-duplicate hashing in ``scan``, and by
+    normalized overlap in ``compare``.
+    """
+
+    id: str = "record_normalized_v1"
+    includes_all_fields: bool = True
+    sort_object_keys: bool = True
+    string_strip: bool = True
+    collapse_internal_whitespace: bool = False
+    case_fold: bool = False
+    unicode_normalize: Optional[str] = None
+    serialization: str = "json_utf8_compact_sorted_keys"
+    hash: str = "sha256"
+    notes: list[str] = Field(
+        default_factory=lambda: [
+            'Strings: only str.strip() (leading/trailing whitespace).',
+            '" Hello   World " becomes "Hello   World" (internal spaces kept).',
+            "No lowercasing, no Unicode NFC/NFKC, no column exclusions.",
+        ]
+    )
+
+
+class RecordExactSpec(BaseModel):
+    """Stable serialization without string stripping (compare exact overlap)."""
+
+    id: str = "record_exact_v1"
+    includes_all_fields: bool = True
+    sort_object_keys: bool = True
+    string_strip: bool = False
+    collapse_internal_whitespace: bool = False
+    case_fold: bool = False
+    unicode_normalize: Optional[str] = None
+    serialization: str = "json_utf8_compact_sorted_keys"
+    hash: str = "sha256"
+    notes: list[str] = Field(
+        default_factory=lambda: [
+            "Strings are left unchanged (no strip).",
+            "Object keys are sorted for stable JSON only.",
+        ]
+    )
+
+
+class NearDuplicateTextPrepSpec(BaseModel):
+    """Text preparation used only for near-duplicate shingling (not fingerprint)."""
+
+    id: str = "near_text_v1"
+    prefer_text_column: bool = True
+    fallback: str = "join_sorted_string_fields"
+    lowercase: bool = True
+    collapse_whitespace: bool = True
+    notes: list[str] = Field(
+        default_factory=lambda: [
+            "Applies only to near-duplicate lexical similarity.",
+            "Does not affect fingerprint or exact-duplicate hashes.",
+        ]
+    )
+
+
+RECORD_NORMALIZATION_V1 = RecordNormalizationSpec()
+RECORD_EXACT_V1 = RecordExactSpec()
+NEAR_TEXT_PREP_V1 = NearDuplicateTextPrepSpec()
+
+
 # --- scan ------------------------------------------------------------------
 
 
@@ -49,11 +115,15 @@ class NearDuplicateMethod(BaseModel):
     similarity: str = "character_shingles+jaccard"
     candidate_generation: str
     minhash: MinHashInfo
+    text_prep: NearDuplicateTextPrepSpec = Field(default_factory=NearDuplicateTextPrepSpec)
 
 
 class ScanMethod(BaseModel):
     fingerprint: str = "normalized_record_multiset_sha256"
     exact_duplicates: str = "normalized_record_sha256"
+    record_normalization: RecordNormalizationSpec = Field(
+        default_factory=RecordNormalizationSpec
+    )
     near_duplicates: NearDuplicateMethod
 
 
@@ -120,6 +190,10 @@ class CompareMethod(BaseModel):
     exact_overlap: str = "stable_json_sha256_no_strip"
     normalized_overlap: str = "stable_json_sha256_with_strip"
     fingerprint: str = "normalized_record_multiset_sha256"
+    record_exact: RecordExactSpec = Field(default_factory=RecordExactSpec)
+    record_normalization: RecordNormalizationSpec = Field(
+        default_factory=RecordNormalizationSpec
+    )
 
 
 class CompareResult(BaseModel):
