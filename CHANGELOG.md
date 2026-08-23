@@ -1,7 +1,11 @@
 # Changelog
 
-## [0.4.3] - 2026-08-23
+## [0.4.4] - 2026-08-23
 
+### Added
+- Compare match evidence: per-pair `dataset_a_record` / `dataset_b_record` (0-based), parallel to benchmark-check
+
+## [0.4.3] - 2026-08-23
 ### Changed
 - Benchmark method uses `text_extraction` (`strategy`, `candidate_fields`); `comparable_fields` kept as a deprecated alias
 

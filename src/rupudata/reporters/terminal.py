@@ -104,10 +104,27 @@ def render_compare_terminal(
     overlap.add_row("Normalized overlap", f"{normalized.shared_records:,}")
     overlap.add_row("Only in A (exact)", f"{exact.only_in_a:,}")
     overlap.add_row("Only in B (exact)", f"{exact.only_in_b:,}")
+    overlap.add_row("Evidence pairs (exact)", f"{len(report.result.matches.exact):,}")
+    overlap.add_row(
+        "Evidence pairs (normalized)",
+        f"{len(report.result.matches.normalized):,}",
+    )
     console.print("[bold cyan]Overlap[/bold cyan]")
     console.print("─" * 30)
     console.print(overlap)
     console.print()
+
+    evidence = report.result.matches.exact[:5] or report.result.matches.normalized[:5]
+    if evidence:
+        ev = Table(show_header=True, box=None, padding=(0, 2))
+        ev.add_column("dataset_a_row")
+        ev.add_column("dataset_b_row")
+        for item in evidence:
+            ev.add_row(str(item.dataset_a_record), str(item.dataset_b_record))
+        console.print("[bold cyan]Evidence (sample)[/bold cyan]")
+        console.print("─" * 30)
+        console.print(ev)
+        console.print()
 
     console.print(f"Report written to:\n[bold]{output_path}[/bold]\n")
     for note in report.notes:

@@ -6,7 +6,7 @@ This is reproducible technical evidence, not legal certification.
 
 from __future__ import annotations
 
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 from pydantic import BaseModel, Field
 
@@ -194,19 +194,41 @@ class CompareInput(BaseModel):
     dataset_b: DatasetRef
 
 
+class CompareConfiguration(BaseModel):
+    match_exact: bool = True
+    match_normalized: bool = True
+    max_evidence_pairs: int = 100
+    row_index_base: int = 0
+
+
 class CompareMethod(BaseModel):
+    unit: str = "full record (all fields); not text extraction"
     exact_overlap: str = "stable_json_sha256_no_strip"
     normalized_overlap: str = "stable_json_sha256_with_strip"
     fingerprint: str = "normalized_record_multiset_sha256"
+    row_index_base: int = 0
     record_exact: RecordExactSpec = Field(default_factory=RecordExactSpec)
     record_normalization: RecordNormalizationSpec = Field(
         default_factory=RecordNormalizationSpec
     )
 
 
+class CompareMatchItem(BaseModel):
+    dataset_a_record: int
+    dataset_b_record: int
+
+
+class CompareMatchEvidence(BaseModel):
+    exact: list[CompareMatchItem] = Field(default_factory=list)
+    normalized: list[CompareMatchItem] = Field(default_factory=list)
+    exact_truncated: bool = False
+    normalized_truncated: bool = False
+
+
 class CompareResult(BaseModel):
     exact_overlap: OverlapStats
     normalized_overlap: OverlapStats
+    matches: CompareMatchEvidence = Field(default_factory=CompareMatchEvidence)
 
 
 class CompareReport(BaseModel):
@@ -217,7 +239,7 @@ class CompareReport(BaseModel):
     contract: str = CONTRACT_ID
     disclaimer: str = DISCLAIMER
     input: CompareInput
-    configuration: Dict[str, Any] = Field(default_factory=dict)
+    configuration: CompareConfiguration = Field(default_factory=CompareConfiguration)
     method: CompareMethod = Field(default_factory=CompareMethod)
     result: CompareResult
     notes: list[str] = Field(default_factory=list)

@@ -14,7 +14,7 @@ RupuData ofrece **señales técnicas, no certificación legal.**
 
 ## Estado
 
-`0.4.3` — deliberadamente chico; cada release aporta algo útil.
+`0.4.4` — deliberadamente chico; cada release aporta algo útil.
 
 Qué funciona hoy:
 
@@ -23,7 +23,7 @@ Qué funciona hoy:
 - Fingerprint de contenido determinístico (`rupu:…`)
 - Detección de duplicados exactos (hash de registros normalizados)
 - Detección de near-duplicates (character shingles + Jaccard; MinHash/LSH en sets más grandes)
-- `rupudata compare` — overlap exacto y normalizado entre dos datasets
+- `rupudata compare` — overlap exacto y normalizado entre dos datasets, con evidencia por fila
 - `rupudata benchmark-check` — overlap exacto/normalizado vs un reference de benchmark (p. ej. sample GSM8K), con evidencia por match (fila + campo)
 - JSON como **contrato de auditoría técnica** (`input → configuration → method → result`)
 
@@ -55,6 +55,8 @@ rupudata scan examples/near_dupes.jsonl --near-duplicate-threshold 0.85
 ```bash
 rupudata compare examples/train.jsonl examples/eval.jsonl
 ```
+
+Compara **registros completos** (todos los campos) con hashing exacto y normalizado, y evidencia de pares de filas en `result.matches`. No es extracción de texto (a diferencia de `benchmark-check`).
 
 ### Benchmark check
 
