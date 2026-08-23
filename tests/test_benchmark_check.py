@@ -35,6 +35,12 @@ def test_gsm8k_sample_detects_exact_and_normalized_overlap() -> None:
     assert report.result.normalized_matches >= report.result.exact_matches
     assert report.result.status == "OVERLAP_DETECTED"
     assert report.configuration.match_near_duplicate is False
+    assert report.result.matches.exact
+    assert report.result.matches.exact[0].field == "question"
+    assert isinstance(report.result.matches.exact[0].dataset_record, int)
+    assert report.result.matches.normalized
+    fields_used = {m.field for m in report.result.matches.normalized}
+    assert "question" in fields_used
 
 
 def test_benchmark_check_cli(tmp_path: Path) -> None:
@@ -57,7 +63,12 @@ def test_benchmark_check_cli(tmp_path: Path) -> None:
     assert payload["contract"] == "technical_audit"
     assert payload["result"]["status"] == "OVERLAP_DETECTED"
     assert payload["method"]["comparable_fields"][0] == "question"
+    assert payload["method"]["row_index_base"] == 0
+    assert payload["result"]["matches"]["exact"]
+    assert "field" in payload["result"]["matches"]["exact"][0]
+    assert "dataset_record" in payload["result"]["matches"]["exact"][0]
     assert payload["configuration"]["match_near_duplicate"] is False
+    assert "Evidence" in result.output
 
 
 def test_unknown_benchmark() -> None:

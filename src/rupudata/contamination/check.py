@@ -5,7 +5,11 @@ from __future__ import annotations
 from pathlib import Path
 
 from rupudata import __version__
-from rupudata.contamination.matcher import count_overlap, unique_text_hashes
+from rupudata.contamination.matcher import (
+    DEFAULT_MAX_EVIDENCE,
+    build_overlap_evidence,
+    index_rows,
+)
 from rupudata.contamination.registry import get_adapter
 from rupudata.core.models import (
     BenchmarkCheckReport,
@@ -14,6 +18,8 @@ from rupudata.core.models import (
     BenchmarkMethod,
     BenchmarkResult,
     DatasetRef,
+    MatchEvidence,
+    MatchEvidenceItem,
     RECORD_EXACT_V1,
     RECORD_NORMALIZATION_V1,
 )
@@ -32,11 +38,23 @@ def _dataset_ref(path: Path, df, fmt: str) -> DatasetRef:
     )
 
 
+def _to_items(pairs) -> list[MatchEvidenceItem]:
+    return [
+        MatchEvidenceItem(
+            dataset_record=p.dataset_record,
+            reference_record=p.reference_record,
+            field=p.field,
+        )
+        for p in pairs
+    ]
+
+
 def check_benchmark(
     dataset_path: str | Path,
     benchmark_id: str,
     *,
     reference: str | Path | None = None,
+    max_evidence: int = DEFAULT_MAX_EVIDENCE,
 ) -> BenchmarkCheckReport:
     adapter = get_adapter(benchmark_id)
     data_path = Path(dataset_path).expanduser().resolve()
@@ -46,16 +64,17 @@ def check_benchmark(
     loaded = adapter.load_reference(ref_path)
     fields = adapter.comparable_fields()
 
-    exact_data = unique_text_hashes(df, normalized=False, fields=fields)
-    exact_bench = unique_text_hashes(loaded.frame, normalized=False, fields=fields)
-    norm_data = unique_text_hashes(df, normalized=True, fields=fields)
-    norm_bench = unique_text_hashes(loaded.frame, normalized=True, fields=fields)
+    exact_ds = index_rows(df, normalized=False, fields=fields)
+    exact_ref = index_rows(loaded.frame, normalized=False, fields=fields)
+    norm_ds = index_rows(df, normalized=True, fields=fields)
+    norm_ref = index_rows(loaded.frame, normalized=True, fields=fields)
 
-    exact_matches = count_overlap(exact_data, exact_bench)
-    normalized_matches = count_overlap(norm_data, norm_bench)
+    exact_ev = build_overlap_evidence(exact_ds, exact_ref, max_pairs=max_evidence)
+    norm_ev = build_overlap_evidence(norm_ds, norm_ref, max_pairs=max_evidence)
+
     status = (
         "OVERLAP_DETECTED"
-        if exact_matches or normalized_matches
+        if exact_ev.unique_texts or norm_ev.unique_texts
         else "NO_OVERLAP_DETECTED"
     )
 
@@ -63,6 +82,7 @@ def check_benchmark(
         "This report is a technical audit contract (input → configuration → method → result).",
         "RupuData detected text overlap under the configured matching methodology — not a legal or scientific contamination verdict.",
         "Interpretation of whether overlap constitutes contamination depends on context.",
+        "result.matches lists concrete row pairs (0-based) and the field used on the dataset side.",
         "Near-duplicate / paraphrase / translation matching is not included in this release.",
         *adapter.notes,
     ]
@@ -93,10 +113,16 @@ def check_benchmark(
             record_normalization=RECORD_NORMALIZATION_V1,
         ),
         result=BenchmarkResult(
-            exact_matches=exact_matches,
-            normalized_matches=normalized_matches,
+            exact_matches=exact_ev.unique_texts,
+            normalized_matches=norm_ev.unique_texts,
             near_matches=0,
             status=status,
+            matches=MatchEvidence(
+                exact=_to_items(exact_ev.pairs),
+                normalized=_to_items(norm_ev.pairs),
+                exact_truncated=exact_ev.truncated,
+                normalized_truncated=norm_ev.truncated,
+            ),
         ),
         notes=notes,
     )

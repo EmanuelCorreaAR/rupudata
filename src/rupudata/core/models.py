@@ -250,6 +250,10 @@ class BenchmarkMethod(BaseModel):
     comparable_fields: list[str] = Field(
         default_factory=lambda: ["question", "problem", "prompt", "text"]
     )
+    field_selection: str = (
+        "first non-empty field in comparable_fields order, recorded per match"
+    )
+    row_index_base: int = 0
     exact: str = "hash of comparable text without strip (record_exact_v1 on {text})"
     normalized: str = "hash of comparable text with strip (record_normalized_v1 on {text})"
     near_duplicate: str = "disabled"
@@ -259,11 +263,25 @@ class BenchmarkMethod(BaseModel):
     )
 
 
+class MatchEvidenceItem(BaseModel):
+    dataset_record: int
+    reference_record: int
+    field: str
+
+
+class MatchEvidence(BaseModel):
+    exact: list[MatchEvidenceItem] = Field(default_factory=list)
+    normalized: list[MatchEvidenceItem] = Field(default_factory=list)
+    exact_truncated: bool = False
+    normalized_truncated: bool = False
+
+
 class BenchmarkResult(BaseModel):
     exact_matches: int
     normalized_matches: int
     near_matches: int = 0
     status: str
+    matches: MatchEvidence = Field(default_factory=MatchEvidence)
 
 
 class BenchmarkCheckReport(BaseModel):

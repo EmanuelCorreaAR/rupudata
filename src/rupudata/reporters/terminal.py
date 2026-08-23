@@ -144,10 +144,32 @@ def render_benchmark_terminal(
     matches.add_row("Normalized matches", f"{report.result.normalized_matches:,}")
     matches.add_row("Near matches", "n/a (disabled)")
     matches.add_row("Status", report.result.status)
+    matches.add_row("Evidence pairs (exact)", f"{len(report.result.matches.exact):,}")
+    matches.add_row(
+        "Evidence pairs (normalized)",
+        f"{len(report.result.matches.normalized):,}",
+    )
     console.print("[bold cyan]Overlap[/bold cyan]")
     console.print("─" * 30)
     console.print(matches)
     console.print()
+
+    evidence = report.result.matches.exact[:5] or report.result.matches.normalized[:5]
+    if evidence:
+        ev = Table(show_header=True, box=None, padding=(0, 2))
+        ev.add_column("dataset_row")
+        ev.add_column("reference_row")
+        ev.add_column("field")
+        for item in evidence:
+            ev.add_row(
+                str(item.dataset_record),
+                str(item.reference_record),
+                item.field,
+            )
+        console.print("[bold cyan]Evidence (sample)[/bold cyan]")
+        console.print("─" * 30)
+        console.print(ev)
+        console.print()
 
     console.print(f"Report written to:\n[bold]{output_path}[/bold]\n")
     for note in report.notes:

@@ -14,7 +14,7 @@ RupuData ofrece **señales técnicas, no certificación legal.**
 
 ## Estado
 
-`0.4.1` — deliberadamente chico; cada release aporta algo útil.
+`0.4.2` — deliberadamente chico; cada release aporta algo útil.
 
 Qué funciona hoy:
 
@@ -24,7 +24,7 @@ Qué funciona hoy:
 - Detección de duplicados exactos (hash de registros normalizados)
 - Detección de near-duplicates (character shingles + Jaccard; MinHash/LSH en sets más grandes)
 - `rupudata compare` — overlap exacto y normalizado entre dos datasets
-- `rupudata benchmark-check` — overlap exacto/normalizado vs un reference de benchmark (p. ej. sample GSM8K)
+- `rupudata benchmark-check` — overlap exacto/normalizado vs un reference de benchmark (p. ej. sample GSM8K), con evidencia por match (fila + campo)
 - JSON como **contrato de auditoría técnica** (`input → configuration → method → result`)
 
 Qué no entra en este release (a propósito):
