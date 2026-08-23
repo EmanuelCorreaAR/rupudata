@@ -24,7 +24,7 @@ from typing import Any, Iterable
 
 import polars as pl
 
-from rupudata.core.models import NearDuplicates
+from rupudata.core.models import MinHashInfo, NearDuplicates
 from rupudata.core.normalization import hash_record
 
 
@@ -148,36 +148,35 @@ def analyze_near_duplicates(
     cfg = config or NearDuplicateConfig()
     total = df.height
 
-    empty = NearDuplicates(
-        enabled=cfg.enabled,
-        threshold=cfg.threshold,
-        shingle_size=cfg.shingle_size,
-        num_perm=cfg.num_perm,
-        pairs=0,
-        records_flagged=0,
-        record_rate=0.0,
-        method="disabled" if not cfg.enabled else "character_shingles+jaccard",
-    )
     if not cfg.enabled or total == 0:
-        return empty
+        return NearDuplicates(
+            enabled=cfg.enabled,
+            threshold=cfg.threshold,
+            shingle_size=cfg.shingle_size,
+            pairs=0,
+            records_flagged=0,
+            record_rate=0.0,
+            similarity="character_shingles+jaccard",
+            candidate_generation="disabled" if not cfg.enabled else "none",
+            minhash=MinHashInfo(enabled=False, num_perm=None),
+        )
 
     rows = list(df.iter_rows(named=True))
     texts = [record_text(row) for row in rows]
     exact_hashes = [hash_record(row) for row in rows]
     shingle_sets = [char_shingles(text, cfg.shingle_size) for text in texts]
 
-    # Work on unique normalized texts to reduce pairs; map back to row indices.
-    # For near-dupes we still pair at row level among distinct exact hashes only
-    # when verifying "near" (not exact). Build candidates across all rows.
     if total <= PAIRWISE_LIMIT:
         candidate_pairs = list(_all_pairs(total))
-        method = "character_shingles+jaccard+pairwise"
+        candidate_generation = "pairwise"
+        minhash = MinHashInfo(enabled=False, num_perm=None)
     else:
         signatures = [
             minhash_signature(s, cfg.num_perm, cfg.seed) for s in shingle_sets
         ]
         candidate_pairs = sorted(_lsh_candidate_pairs(signatures, cfg.num_perm))
-        method = "character_shingles+minhash+lsh+jaccard"
+        candidate_generation = "minhash_lsh"
+        minhash = MinHashInfo(enabled=True, num_perm=cfg.num_perm)
 
     near_pairs = 0
     flagged: set[int] = set()
@@ -195,9 +194,10 @@ def analyze_near_duplicates(
         enabled=True,
         threshold=cfg.threshold,
         shingle_size=cfg.shingle_size,
-        num_perm=cfg.num_perm,
         pairs=near_pairs,
         records_flagged=len(flagged),
         record_rate=round(rate, 6),
-        method=method,
+        similarity="character_shingles+jaccard",
+        candidate_generation=candidate_generation,
+        minhash=minhash,
     )

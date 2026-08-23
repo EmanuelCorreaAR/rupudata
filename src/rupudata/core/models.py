@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Optional
 
 from pydantic import BaseModel, Field
 
@@ -23,15 +23,23 @@ class ExactDuplicates(BaseModel):
     duplicate_rate: float
 
 
+class MinHashInfo(BaseModel):
+    """Whether MinHash/LSH was actually used for candidate generation."""
+
+    enabled: bool
+    num_perm: Optional[int] = None
+
+
 class NearDuplicates(BaseModel):
     enabled: bool = True
     threshold: float
     shingle_size: int
-    num_perm: int
     pairs: int
     records_flagged: int
     record_rate: float
-    method: str
+    similarity: str = "character_shingles+jaccard"
+    candidate_generation: str
+    minhash: MinHashInfo
 
 
 class ScanReport(BaseModel):

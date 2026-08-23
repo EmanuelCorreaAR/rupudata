@@ -14,7 +14,7 @@ RupuData ofrece **señales técnicas, no certificación legal.**
 
 ## Estado
 
-`0.3.0` — deliberadamente chico; cada release aporta algo útil.
+`0.3.1` — deliberadamente chico; cada release aporta algo útil.
 
 Qué funciona hoy:
 
