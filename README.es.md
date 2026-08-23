@@ -14,7 +14,7 @@ RupuData ofrece **señales técnicas, no certificación legal.**
 
 ## Estado
 
-`0.4.0` — deliberadamente chico; cada release aporta algo útil.
+`0.4.1` — deliberadamente chico; cada release aporta algo útil.
 
 Qué funciona hoy:
 
@@ -70,6 +70,8 @@ rupudata benchmark-check train.jsonl --benchmark gsm8k --reference /path/to/gsm8
 ```
 
 El status es `OVERLAP_DETECTED` o `NO_OVERLAP_DETECTED` bajo la metodología — **no** una afirmación de que el modelo está contaminado.
+
+Los benchmarks son plugins vía `BenchmarkAdapter` (`load_reference`, `comparable_fields`). Hoy solo está registrado **GSM8K**.
 
 ## Contrato de auditoría técnica
 

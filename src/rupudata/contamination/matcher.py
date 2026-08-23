@@ -1,9 +1,9 @@
-"""Benchmark overlap checking (technical evidence, not contamination claims)."""
+"""Benchmark overlap matching (technical evidence, not contamination claims)."""
 
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any
+from typing import Any, Sequence
 
 import polars as pl
 
@@ -11,9 +11,12 @@ from rupudata.core.normalization import hash_record, hash_record_exact
 from rupudata.core.reader import read_dataset
 
 
-def extract_comparable_text(record: dict[str, Any]) -> str | None:
-    """Prefer question/text fields used by common benchmarks and training sets."""
-    for key in ("question", "problem", "prompt", "text"):
+def extract_comparable_text(
+    record: dict[str, Any],
+    fields: Sequence[str],
+) -> str | None:
+    """Extract text from the first non-empty field in ``fields`` order."""
+    for key in fields:
         value = record.get(key)
         if value is not None and str(value).strip():
             return str(value)
@@ -24,11 +27,16 @@ def _text_record(text: str) -> dict[str, str]:
     return {"text": text}
 
 
-def unique_text_hashes(df: pl.DataFrame, *, normalized: bool) -> set[str]:
+def unique_text_hashes(
+    df: pl.DataFrame,
+    *,
+    normalized: bool,
+    fields: Sequence[str],
+) -> set[str]:
     hasher = hash_record if normalized else hash_record_exact
     hashes: set[str] = set()
     for row in df.iter_rows(named=True):
-        text = extract_comparable_text(row)
+        text = extract_comparable_text(row, fields)
         if text is None:
             continue
         hashes.add(hasher(_text_record(text)))

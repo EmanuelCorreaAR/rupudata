@@ -8,11 +8,22 @@ from pathlib import Path
 from typer.testing import CliRunner
 
 from rupudata.cli import app
+from rupudata.contamination.adapters.base import BenchmarkAdapter
+from rupudata.contamination.adapters.gsm8k import Gsm8kAdapter
 from rupudata.contamination.check import check_benchmark
+from rupudata.contamination.registry import get_adapter, list_adapters
 
 EXAMPLES = Path(__file__).resolve().parents[1] / "examples"
 TRAIN = EXAMPLES / "train_with_gsm8k_overlap.jsonl"
 runner = CliRunner()
+
+
+def test_gsm8k_is_registered_adapter() -> None:
+    adapter = get_adapter("gsm8k")
+    assert isinstance(adapter, Gsm8kAdapter)
+    assert isinstance(adapter, BenchmarkAdapter)
+    assert adapter.comparable_fields()[0] == "question"
+    assert any(a.id == "gsm8k" for a in list_adapters())
 
 
 def test_gsm8k_sample_detects_exact_and_normalized_overlap() -> None:
@@ -45,6 +56,7 @@ def test_benchmark_check_cli(tmp_path: Path) -> None:
     payload = json.loads(out.read_text(encoding="utf-8"))
     assert payload["contract"] == "technical_audit"
     assert payload["result"]["status"] == "OVERLAP_DETECTED"
+    assert payload["method"]["comparable_fields"][0] == "question"
     assert payload["configuration"]["match_near_duplicate"] is False
 
 

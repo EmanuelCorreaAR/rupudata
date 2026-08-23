@@ -1,7 +1,11 @@
 # Changelog
 
-## [0.4.0] - 2026-08-23
+## [0.4.1] - 2026-08-23
 
+### Changed
+- Refactor benchmark support behind a `BenchmarkAdapter` protocol; GSM8K is the first adapter
+
+## [0.4.0] - 2026-08-23
 ### Added
 - CLI `rupudata benchmark-check` for exact/normalized text overlap vs registered benchmarks
 - Built-in `gsm8k` sample reference (demo/CI only; use `--reference` for full corpora)
