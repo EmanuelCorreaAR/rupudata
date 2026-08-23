@@ -221,3 +221,5 @@ __marimo__/
 rupudata-report.json
 rupudata-compare.json
 reports/
+
+rupudata-benchmark.json

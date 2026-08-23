@@ -224,3 +224,60 @@ class CompareReport(BaseModel):
 
     def to_dict(self) -> dict[str, Any]:
         return self.model_dump(mode="json")
+
+
+# --- benchmark-check -------------------------------------------------------
+
+
+class BenchmarkInput(BaseModel):
+    dataset: DatasetRef
+    benchmark_id: str
+    benchmark_name: str
+    reference_source: str
+    reference_path: str
+    benchmark_records: int
+    benchmark_fingerprint: str
+
+
+class BenchmarkConfiguration(BaseModel):
+    benchmark: str
+    match_exact: bool = True
+    match_normalized: bool = True
+    match_near_duplicate: bool = False
+
+
+class BenchmarkMethod(BaseModel):
+    comparable_fields: list[str] = Field(
+        default_factory=lambda: ["question", "problem", "prompt", "text"]
+    )
+    exact: str = "hash of comparable text without strip (record_exact_v1 on {text})"
+    normalized: str = "hash of comparable text with strip (record_normalized_v1 on {text})"
+    near_duplicate: str = "disabled"
+    record_exact: RecordExactSpec = Field(default_factory=RecordExactSpec)
+    record_normalization: RecordNormalizationSpec = Field(
+        default_factory=RecordNormalizationSpec
+    )
+
+
+class BenchmarkResult(BaseModel):
+    exact_matches: int
+    normalized_matches: int
+    near_matches: int = 0
+    status: str
+
+
+class BenchmarkCheckReport(BaseModel):
+    """Technical audit of dataset vs benchmark text overlap."""
+
+    tool: str = "rupudata"
+    version: str
+    contract: str = CONTRACT_ID
+    disclaimer: str = DISCLAIMER
+    input: BenchmarkInput
+    configuration: BenchmarkConfiguration
+    method: BenchmarkMethod
+    result: BenchmarkResult
+    notes: list[str] = Field(default_factory=list)
+
+    def to_dict(self) -> dict[str, Any]:
+        return self.model_dump(mode="json")

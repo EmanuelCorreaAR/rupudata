@@ -14,7 +14,7 @@ RupuData ofrece **señales técnicas, no certificación legal.**
 
 ## Estado
 
-`0.3.4` — deliberadamente chico; cada release aporta algo útil.
+`0.4.0` — deliberadamente chico; cada release aporta algo útil.
 
 Qué funciona hoy:
 
@@ -24,12 +24,13 @@ Qué funciona hoy:
 - Detección de duplicados exactos (hash de registros normalizados)
 - Detección de near-duplicates (character shingles + Jaccard; MinHash/LSH en sets más grandes)
 - `rupudata compare` — overlap exacto y normalizado entre dos datasets
+- `rupudata benchmark-check` — overlap exacto/normalizado vs un reference de benchmark (p. ej. sample GSM8K)
 - JSON como **contrato de auditoría técnica** (`input → configuration → method → result`)
 
 Qué no entra en este release (a propósito):
 
 - Matching semántico / paráfrasis / traducciones
-- Adapters de contaminación de benchmarks
+- Near-duplicates contra benchmarks
 - Detectores de provenance / licencias
 - Gates de CI
 - Scans streaming para datasets de varios GB
@@ -54,6 +55,21 @@ rupudata scan examples/near_dupes.jsonl --near-duplicate-threshold 0.85
 ```bash
 rupudata compare examples/train.jsonl examples/eval.jsonl
 ```
+
+### Benchmark check
+
+```bash
+rupudata benchmark-check examples/train_with_gsm8k_overlap.jsonl --benchmark gsm8k
+```
+
+Reporta overlap exacto y normalizado contra un reference de benchmark.  
+Por defecto `gsm8k` usa un **sample empaquetado** (demos/tests). Para auditorías reales:
+
+```bash
+rupudata benchmark-check train.jsonl --benchmark gsm8k --reference /path/to/gsm8k.jsonl
+```
+
+El status es `OVERLAP_DETECTED` o `NO_OVERLAP_DETECTED` bajo la metodología — **no** una afirmación de que el modelo está contaminado.
 
 ## Contrato de auditoría técnica
 

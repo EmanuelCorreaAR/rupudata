@@ -6,7 +6,7 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 
-from rupudata.core.models import CompareReport, ScanReport
+from rupudata.core.models import CompareReport, ScanReport, BenchmarkCheckReport
 
 
 def _format_bytes(n: int) -> str:
@@ -107,6 +107,46 @@ def render_compare_terminal(
     console.print("[bold cyan]Overlap[/bold cyan]")
     console.print("─" * 30)
     console.print(overlap)
+    console.print()
+
+    console.print(f"Report written to:\n[bold]{output_path}[/bold]\n")
+    for note in report.notes:
+        console.print(f"[dim]• {note}[/dim]")
+
+
+def render_benchmark_terminal(
+    report: BenchmarkCheckReport, output_path: str, console: Console | None = None
+) -> None:
+    console = console or Console()
+    _header(report.version, console)
+    console.print(
+        f"\nBenchmark check: [bold]{report.input.dataset.path}[/bold] "
+        f"vs [bold]{report.input.benchmark_name}[/bold]\n"
+    )
+
+    meta = Table(show_header=False, box=None, padding=(0, 2))
+    meta.add_column(style="bold")
+    meta.add_column()
+    meta.add_row("Benchmark", report.input.benchmark_name)
+    meta.add_row("Reference", report.input.reference_source)
+    meta.add_row("Benchmark records", f"{report.input.benchmark_records:,}")
+    meta.add_row("Dataset rows", f"{report.input.dataset.rows:,}")
+    meta.add_row("Benchmark fingerprint", report.input.benchmark_fingerprint)
+    console.print("[bold cyan]Benchmark[/bold cyan]")
+    console.print("─" * 30)
+    console.print(meta)
+    console.print()
+
+    matches = Table(show_header=False, box=None, padding=(0, 2))
+    matches.add_column(style="bold")
+    matches.add_column()
+    matches.add_row("Exact matches", f"{report.result.exact_matches:,}")
+    matches.add_row("Normalized matches", f"{report.result.normalized_matches:,}")
+    matches.add_row("Near matches", "n/a (disabled)")
+    matches.add_row("Status", report.result.status)
+    console.print("[bold cyan]Overlap[/bold cyan]")
+    console.print("─" * 30)
+    console.print(matches)
     console.print()
 
     console.print(f"Report written to:\n[bold]{output_path}[/bold]\n")

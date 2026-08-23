@@ -10,9 +10,14 @@ from rich.console import Console
 
 from rupudata.analyzers.near_duplicates import NearDuplicateConfig
 from rupudata.comparison.diff import compare_datasets
+from rupudata.contamination.check import check_benchmark
 from rupudata.core.scanner import scan_dataset
 from rupudata.reporters.json_report import write_json_report
-from rupudata.reporters.terminal import render_compare_terminal, render_terminal
+from rupudata.reporters.terminal import (
+    render_benchmark_terminal,
+    render_compare_terminal,
+    render_terminal,
+)
 
 app = typer.Typer(
     name="rupudata",
@@ -96,6 +101,39 @@ def compare(
     report_path = output or Path("rupudata-compare.json")
     written = write_json_report(report, report_path)
     render_compare_terminal(report, str(written))
+
+
+@app.command("benchmark-check")
+def benchmark_check(
+    path: Path = typer.Argument(..., help="Path to a JSONL or Parquet training/eval dataset."),
+    benchmark: str = typer.Option(
+        ...,
+        "--benchmark",
+        "-b",
+        help="Benchmark id (currently: gsm8k).",
+    ),
+    reference: Optional[Path] = typer.Option(
+        None,
+        "--reference",
+        help="Optional path to a full benchmark JSONL/Parquet. Default: packaged sample.",
+    ),
+    output: Optional[Path] = typer.Option(
+        None,
+        "--output",
+        "-o",
+        help="Path for the JSON report (default: ./rupudata-benchmark.json).",
+    ),
+) -> None:
+    """Check text overlap between a dataset and a known benchmark reference."""
+    try:
+        report = check_benchmark(path, benchmark, reference=reference)
+    except (FileNotFoundError, ValueError) as exc:
+        console.print(f"[red]Error:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
+
+    report_path = output or Path("rupudata-benchmark.json")
+    written = write_json_report(report, report_path)
+    render_benchmark_terminal(report, str(written))
 
 
 @app.callback()

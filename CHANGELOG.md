@@ -1,7 +1,12 @@
 # Changelog
 
-## [0.3.4] - 2026-08-23
+## [0.4.0] - 2026-08-23
 
+### Added
+- CLI `rupudata benchmark-check` for exact/normalized text overlap vs registered benchmarks
+- Built-in `gsm8k` sample reference (demo/CI only; use `--reference` for full corpora)
+
+## [0.3.4] - 2026-08-23
 ### Changed
 - Near-duplicate config/method now report `shingle: { unit, size }` instead of ambiguous `shingle_size`
 
