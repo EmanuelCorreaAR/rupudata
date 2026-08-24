@@ -6,9 +6,8 @@
 - Terminal sample of near-duplicate evidence pairs
 
 ### Changed
-- Slim README (pitch + GSM8K demo); matching/audit spec in `docs/AUDIT.md` (+ `AUDIT.es.md`)
+- Slim README (pitch + GSM8K demo); matching/audit spec in `docs/AUDIT.md`
 - Align near-dupe docs with `evidence` / `evidence_truncated` JSON
-- Adapt `README.es.md` to natural Spanish (not a literal EN mirror)
 
 ## [0.6.6] - 2026-08-23
 ### Changed
