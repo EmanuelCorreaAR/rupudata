@@ -120,6 +120,27 @@ Duplicates
   Candidates          minhash_lsh
 ```
 
+Those **2 near-dupe pairs** (character shingles, Jaccard ≥ 0.85) are real GSM8K training rows — not fixtures:
+
+| Rows | Jaccard | What differs |
+|------|---------|----------------|
+| `1174` ↔ `7233` | 0.87 | Same “Martha / butterflies” template; different totals and which color is asked |
+| `2483` ↔ `6691` | 0.93 | Same gift / cassette / headphone word problem; only the name (`Josie` → `Amanda`) |
+
+Example (abbreviated):
+
+```text
+Record 2483
+  Josie received $50 as a gift. She plans to buy two cassette tapes…
+
+Record 6691
+  Amanda received $50 as a gift. She plans to buy two cassette tapes…
+
+Similarity (Jaccard on character shingles): 0.93
+```
+
+That is **lexical** near-duplication. RupuData does **not** claim the questions are the same math problem for a student, nor plagiarism — only that the strings share enough character shingles under the configured threshold.
+
 ```text
 7,476 training records (with 3 injected test rows)
         │

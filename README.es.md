@@ -120,6 +120,27 @@ Duplicates
   Candidates          minhash_lsh
 ```
 
+Esos **2 pares near-dupe** (shingles de caracteres, Jaccard ≥ 0.85) son filas reales del train de GSM8K — no fixtures:
+
+| Filas | Jaccard | Qué cambia |
+|------|---------|------------|
+| `1174` ↔ `7233` | 0.87 | Misma plantilla “Martha / butterflies”; totales y color preguntado distintos |
+| `2483` ↔ `6691` | 0.93 | Mismo problema del regalo / cassettes / auriculares; solo el nombre (`Josie` → `Amanda`) |
+
+Ejemplo (abreviado):
+
+```text
+Record 2483
+  Josie received $50 as a gift. She plans to buy two cassette tapes…
+
+Record 6691
+  Amanda received $50 as a gift. She plans to buy two cassette tapes…
+
+Similarity (Jaccard on character shingles): 0.93
+```
+
+Eso es near-duplicación **léxica**. RupuData **no** afirma que sean el mismo problema para un alumno, ni plagio — solo que los strings comparten suficientes shingles bajo el umbral configurado.
+
 ```text
 7,476 training records (con 3 filas del test inyectadas)
         │
