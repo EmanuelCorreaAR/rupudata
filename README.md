@@ -164,7 +164,7 @@ rupudata scan examples/near_dupes.jsonl --near-duplicate-threshold 0.85
 
 ## Status
 
-`0.7.1` — README slimmed; audit methodology lives in [`docs/AUDIT.md`](docs/AUDIT.md) ([Español](docs/AUDIT.es.md)).
+`0.7.0` — scan near-duplicate evidence; audit methodology in [`docs/AUDIT.md`](docs/AUDIT.md) ([Español](docs/AUDIT.es.md)).
 
 **Not in this release (on purpose):** semantic / paraphrase matching, CI fail gates, streaming multi-GB scans, provenance/license detectors.
 

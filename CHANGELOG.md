@@ -1,15 +1,14 @@
 # Changelog
 
-## [0.7.1] - 2026-08-24
-### Changed
-- Slim README (pitch + GSM8K demo); move matching/audit spec to `docs/AUDIT.md` (+ `AUDIT.es.md`)
-- Align near-dupe docs with 0.7.0 `evidence` / `evidence_truncated` JSON
-- Adapt `README.es.md` to natural Spanish (not a literal EN mirror)
-
 ## [0.7.0] - 2026-08-24
 ### Added
 - Scan near-duplicate **evidence** in the JSON contract: `left` / `right` row indices, `jaccard`, optional `field` (capped by `--max-evidence`)
 - Terminal sample of near-duplicate evidence pairs
+
+### Changed
+- Slim README (pitch + GSM8K demo); matching/audit spec in `docs/AUDIT.md` (+ `AUDIT.es.md`)
+- Align near-dupe docs with `evidence` / `evidence_truncated` JSON
+- Adapt `README.es.md` to natural Spanish (not a literal EN mirror)
 
 ## [0.6.6] - 2026-08-23
 ### Changed
