@@ -26,9 +26,16 @@ EXIT_OVERLAP = 2
 
 app = typer.Typer(
     name="rupudata",
-    help="Local-first CLI for inspecting and auditing AI datasets.",
+    help=(
+        "Local-first CLI for inspecting and auditing AI datasets.\n\n"
+        "Flags like --text-field and --fail-on-overlap live on each command:\n"
+        "  rupudata compare --help\n"
+        "  rupudata benchmark-check --help\n"
+        "  rupudata scan --help"
+    ),
     add_completion=False,
     no_args_is_help=True,
+    rich_markup_mode="rich",
 )
 console = Console(stderr=True)
 
@@ -103,7 +110,13 @@ def scan(
     render_terminal(report, str(written))
 
 
-@app.command("compare")
+@app.command(
+    "compare",
+    help=(
+        "Compare two datasets for exact/normalized overlap "
+        "(--text-field, --fail-on-overlap)."
+    ),
+)
 def compare(
     path_a: Path = typer.Argument(..., help="First dataset (JSONL or Parquet)."),
     path_b: Path = typer.Argument(..., help="Second dataset (JSONL or Parquet)."),
@@ -160,7 +173,13 @@ def compare(
         raise typer.Exit(code=EXIT_OVERLAP)
 
 
-@app.command("benchmark-check")
+@app.command(
+    "benchmark-check",
+    help=(
+        "Check dataset vs benchmark text overlap "
+        "(--reference, --fail-on-overlap)."
+    ),
+)
 def benchmark_check(
     path: Path = typer.Argument(..., help="Path to a JSONL or Parquet training/eval dataset."),
     benchmark: str = typer.Option(
