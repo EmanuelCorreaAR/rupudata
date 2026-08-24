@@ -34,52 +34,99 @@ Tres comandos. Un objetivo: entender si los datos se solapan donde no deberían.
 
 ## Ejemplo real (GSM8K)
 
-Contra el split **test** completo de GSM8K como `--reference` (1.319 preguntas), un train de 7.476 filas con tres preguntas del test inyectadas reporta:
+Prepará JSONL train/test de GSM8K (p. ej. Hugging Face `openai/gsm8k`) e inyectá tres preguntas del test en una copia del train:
 
 ```bash
+head -n 3 gsm8k_test.jsonl > leak.jsonl
+cat gsm8k_train.jsonl >> leak.jsonl
+
 rupudata benchmark-check leak.jsonl \
   --benchmark gsm8k \
   --reference gsm8k_test.jsonl
 ```
 
+Salida de terminal (paths abreviados):
+
 ```text
-RupuData v0.6.5
+╭───────────────────────────────╮
+│ RupuData v0.6.6               │
+│ Follow the path of your data. │
+╰───────────────────────────────╯
 
-Dataset:       7,476 records
-Reference:     GSM8K test — 1,319 records (user_reference)
+Benchmark check: …/leak.jsonl vs GSM8K
 
-Exact matches:       3
-Normalized matches:  3
-Near matches:        0
+Benchmark
+──────────────────────────────
+  Benchmark                GSM8K
+  Reference                user_reference
+  Benchmark records        1,319
+  Dataset rows             7,476
+  Benchmark fingerprint    rupu:a75016197e210681
 
-Status: OVERLAP_DETECTED
+Overlap
+──────────────────────────────
+  Exact matches                  3
+  Normalized matches             3
+  Near matches                   n/a (disabled)
+  Status                         OVERLAP_DETECTED
+  Evidence pairs (exact)         3
+  Evidence pairs (normalized)    3
 
-Evidence
-  dataset_row  reference_row  field
-  0            0              question
-  1            1              question
-  2            2              question
+Evidence (sample)
+──────────────────────────────
+  dataset_row    reference_row    field
+  0              0                question
+  1              1                question
+  2              2                question
 ```
 
 **3 overlaps exactos con el test set de GSM8K** bajo la metodología configurada.
 
 RupuData reporta overlap textual. **No** determina por qué existe ni certifica que un modelo o dataset esté contaminado.
 
-Sobre el split **train** limpio de GSM8K (7.473 registros):
+Train limpio vs test (sin leak):
+
+```bash
+rupudata compare gsm8k_train.jsonl gsm8k_test.jsonl --text-field question
+rupudata benchmark-check gsm8k_train.jsonl --benchmark gsm8k --reference gsm8k_test.jsonl
+```
+
+→ overlap exacto/normalizado **0**, status **`NO_OVERLAP_DETECTED`**.
+
+Scan sobre el train limpio:
 
 ```bash
 rupudata scan gsm8k_train.jsonl
 ```
 
-→ sin duplicados exactos; solo **2** pares near-duplicate léxicos (Jaccard ≥ 0.85, MinHash/LSH).
+```text
+Dataset
+──────────────────────────────
+  Rows           7,473
+  Format         jsonl
+  Size           1.79 MB
+  Columns        question
+  Fingerprint    rupu:fedca4cb0fa770fe
+
+Duplicates
+──────────────────────────────
+  Exact duplicates    0
+  Unique records      7,473
+  Duplicate rate      0.00%
+  Near-dupe pairs     2
+  Records flagged     4
+  Near-dupe rate      0.05%
+  Near threshold      0.85
+  Candidates          minhash_lsh
+```
 
 ```text
-7,476 training records
+7,476 training records (con 3 filas del test inyectadas)
         │
         ▼
      RupuData
         │
-        ├── scan: 0 exact duplicates, 2 near-dupe pairs
+        ├── scan (train limpio): 0 exact duplicates, 2 near-dupe pairs
         │
         ▼
    GSM8K test (1,319) vía --reference
@@ -139,7 +186,7 @@ rupudata scan examples/near_dupes.jsonl --near-duplicate-threshold 0.85
 
 ## Estado
 
-`0.6.5` — notes contextuales de benchmark + demo real GSM8K en el README.
+`0.6.6` — ejemplos del README alineados al output real de la CLI en corridas GSM8K.
 
 **No en este release (a propósito):** matching semántico / paráfrasis, gates de CI, scans streaming multi-GB, detectores de provenance/licencia.
 

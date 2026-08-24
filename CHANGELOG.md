@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.6.6] - 2026-08-23
+### Changed
+- README terminal examples match real CLI output from GSM8K scan / compare / leak benchmark-check runs
+
 ## [0.6.5] - 2026-08-23
 ### Changed
 - Benchmark notes are contextual to `input.reference_source` (packaged sample vs user-provided reference)
