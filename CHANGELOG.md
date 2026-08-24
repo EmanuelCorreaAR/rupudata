@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.7.1] - 2026-08-24
+### Changed
+- Slim README (pitch + GSM8K demo); move matching/audit spec to `docs/AUDIT.md`
+- Align near-dupe docs with 0.7.0 `evidence` / `evidence_truncated` JSON
+
 ## [0.7.0] - 2026-08-24
 ### Added
 - Scan near-duplicate **evidence** in the JSON contract: `left` / `right` row indices, `jaccard`, optional `field` (capped by `--max-evidence`)
