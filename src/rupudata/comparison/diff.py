@@ -41,6 +41,7 @@ from rupudata.core.normalization import (
     hash_record_exact,
     hash_record_normalized,
 )
+from rupudata.core.policy import NOTE_OVERLAP_RATE, overlap_rate
 from rupudata.core.reader import file_size_bytes, read_dataset
 
 DEFAULT_MAX_EVIDENCE = DEFAULT_MAX_EVIDENCE_PAIRS
@@ -294,6 +295,7 @@ def compare_datasets(
             NOTE_TECHNICAL_SIGNALS,
             NOTE_NOT_CONTAMINATION,
             NOTE_ROW_INDICES,
+            NOTE_OVERLAP_RATE,
             "Full-record overlap: all fields participate in matching.",
             "Exact evidence: row pairs only (no also_exact / differing_fields).",
             "Normalized evidence: always also_exact; differing_fields only when also_exact is false.",
@@ -317,10 +319,28 @@ def compare_datasets(
             NOTE_TECHNICAL_SIGNALS,
             NOTE_NOT_CONTAMINATION,
             NOTE_ROW_INDICES,
+            NOTE_OVERLAP_RATE,
             f"Field-text overlap compares only column '{text_field}'; other fields do not affect matching.",
             "Exact evidence: row pairs only (no also_exact / difference).",
             "Normalized evidence: always also_exact; difference only when also_exact is false.",
         ]
+
+    exact_stats = OverlapStats(
+        shared_records=exact_ev.unique_records,
+        only_in_a=exact_ev.only_in_a,
+        only_in_b=exact_ev.only_in_b,
+        rate=overlap_rate(
+            exact_ev.unique_records, exact_ev.only_in_a, exact_ev.only_in_b
+        ),
+    )
+    norm_stats = OverlapStats(
+        shared_records=norm_ev.unique_records,
+        only_in_a=norm_ev.only_in_a,
+        only_in_b=norm_ev.only_in_b,
+        rate=overlap_rate(
+            norm_ev.unique_records, norm_ev.only_in_a, norm_ev.only_in_b
+        ),
+    )
 
     return CompareReport(
         version=__version__,
@@ -334,16 +354,8 @@ def compare_datasets(
         ),
         method=method,
         result=CompareResult(
-            exact_overlap=OverlapStats(
-                shared_records=exact_ev.unique_records,
-                only_in_a=exact_ev.only_in_a,
-                only_in_b=exact_ev.only_in_b,
-            ),
-            normalized_overlap=OverlapStats(
-                shared_records=norm_ev.unique_records,
-                only_in_a=norm_ev.only_in_a,
-                only_in_b=norm_ev.only_in_b,
-            ),
+            exact_overlap=exact_stats,
+            normalized_overlap=norm_stats,
             matches=CompareMatchEvidence(
                 exact=exact_ev.pairs,
                 normalized=normalized_pairs,

@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.9.0] - 2026-08-24
+### Added
+- Explicit overlap/match **rates** on compare and benchmark-check findings
+- Quality **policy gates** for CI: `--max-overlap-rate`, `--max-duplicate-rate`, `--max-near-duplicate-rate`
+- Optional top-level `gate` object (`passed` + `rules[]` with metric/threshold/actual)
+- `--fail-on-overlap` now emits the same `gate` shape (threshold `0`)
+### Changed
+- Exit code `2` means any configured policy failure (not only binary overlap)
+
 ## [0.8.1] - 2026-08-24
 ### Changed
 - Top-level `--help` points to per-command help and surfaces `--text-field` / `--fail-on-overlap`

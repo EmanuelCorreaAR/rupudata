@@ -29,7 +29,7 @@ def test_compare_fail_on_overlap_exits_2(tmp_path: Path) -> None:
         ],
     )
     assert result.exit_code == EXIT_OVERLAP, result.output
-    assert "Overlap detected" in result.output
+    assert "Policy gate failed" in result.output or "Overlap detected" in result.output
     assert out.exists()
 
 
@@ -73,7 +73,7 @@ def test_benchmark_fail_on_overlap_exits_2(tmp_path: Path) -> None:
     )
     assert result.exit_code == EXIT_OVERLAP, result.output
     assert "OVERLAP_DETECTED" in result.output
-    assert "Overlap detected" in result.output
+    assert "Policy gate failed" in result.output or "Overlap detected" in result.output
     assert out.exists()
 
 

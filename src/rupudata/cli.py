@@ -11,7 +11,11 @@ from rich.console import Console
 from rupudata.analyzers.near_duplicates import NearDuplicateConfig
 from rupudata.comparison.diff import compare_datasets
 from rupudata.contamination.check import check_benchmark
-from rupudata.core.models import BenchmarkCheckReport, CompareReport
+from rupudata.core.policy import (
+    evaluate_benchmark_gate,
+    evaluate_compare_gate,
+    evaluate_scan_gate,
+)
 from rupudata.core.scanner import scan_dataset
 from rupudata.reporters.json_report import write_json_report
 from rupudata.reporters.terminal import (
@@ -20,15 +24,17 @@ from rupudata.reporters.terminal import (
     render_terminal,
 )
 
-# Exit codes: 0 ok, 1 I/O or usage error, 2 overlap policy failure (CI gate).
+# Exit codes: 0 ok, 1 I/O or usage error, 2 quality-policy failure (CI gate).
 EXIT_ERROR = 1
-EXIT_OVERLAP = 2
+EXIT_POLICY = 2
+# Back-compat alias for tests / importers.
+EXIT_OVERLAP = EXIT_POLICY
 
 app = typer.Typer(
     name="rupudata",
     help=(
         "Local-first CLI for inspecting and auditing AI datasets.\n\n"
-        "Flags like --text-field and --fail-on-overlap live on each command:\n"
+        "Policy gates (--fail-on-overlap, --max-*-rate) live on each command:\n"
         "  rupudata compare --help\n"
         "  rupudata benchmark-check --help\n"
         "  rupudata scan --help"
@@ -40,15 +46,15 @@ app = typer.Typer(
 console = Console(stderr=True)
 
 
-def _compare_has_overlap(report: CompareReport) -> bool:
-    return (
-        report.result.exact_overlap.shared_records > 0
-        or report.result.normalized_overlap.shared_records > 0
+def _print_gate_failure(gate) -> None:
+    failed = [r for r in gate.rules if not r.passed]
+    details = ", ".join(
+        f"{r.metric}={r.actual:.6g}>{r.threshold:.6g}" for r in failed
     )
-
-
-def _benchmark_has_overlap(report: BenchmarkCheckReport) -> bool:
-    return report.result.status == "OVERLAP_DETECTED"
+    console.print(
+        f"[red]Policy gate failed[/red] ({details}); "
+        f"exiting {EXIT_POLICY}."
+    )
 
 
 @app.command("scan")
@@ -90,6 +96,23 @@ def scan(
         min=1,
         help="Max near-duplicate evidence pairs in the JSON report.",
     ),
+    max_duplicate_rate: Optional[float] = typer.Option(
+        None,
+        "--max-duplicate-rate",
+        min=0.0,
+        max=1.0,
+        help="Exit 2 if exact duplicate_rate exceeds this threshold (CI gate).",
+    ),
+    max_near_duplicate_rate: Optional[float] = typer.Option(
+        None,
+        "--max-near-duplicate-rate",
+        min=0.0,
+        max=1.0,
+        help=(
+            "Exit 2 if near-duplicate record_rate exceeds this threshold "
+            "(CI gate; requires near-dupe analysis)."
+        ),
+    ),
 ) -> None:
     """Inspect a dataset: structure, fingerprint, exact and near duplicates."""
     config = NearDuplicateConfig(
@@ -101,20 +124,42 @@ def scan(
     )
     try:
         report = scan_dataset(path, near_config=config)
+        gate = evaluate_scan_gate(
+            report,
+            max_duplicate_rate=max_duplicate_rate,
+            max_near_duplicate_rate=max_near_duplicate_rate,
+        )
     except (FileNotFoundError, ValueError) as exc:
         console.print(f"[red]Error:[/red] {exc}")
         raise typer.Exit(code=EXIT_ERROR) from exc
 
+    if gate is not None:
+        report = report.model_copy(
+            update={
+                "gate": gate,
+                "configuration": report.configuration.model_copy(
+                    update={
+                        "max_duplicate_rate": max_duplicate_rate,
+                        "max_near_duplicate_rate": max_near_duplicate_rate,
+                    }
+                ),
+            }
+        )
+
     report_path = output or Path("rupudata-report.json")
     written = write_json_report(report, report_path)
     render_terminal(report, str(written))
+
+    if gate is not None and not gate.passed:
+        _print_gate_failure(gate)
+        raise typer.Exit(code=EXIT_POLICY)
 
 
 @app.command(
     "compare",
     help=(
         "Compare two datasets for exact/normalized overlap "
-        "(--text-field, --fail-on-overlap)."
+        "(--text-field, --fail-on-overlap, --max-overlap-rate)."
     ),
 )
 def compare(
@@ -144,8 +189,18 @@ def compare(
         False,
         "--fail-on-overlap",
         help=(
-            "Exit 2 if exact or normalized overlap is found "
-            "(CI/pipeline gate). Report is still written."
+            "Exit 2 if exact or normalized overlap rate > 0 "
+            "(same as --max-overlap-rate 0). Report is still written."
+        ),
+    ),
+    max_overlap_rate: Optional[float] = typer.Option(
+        None,
+        "--max-overlap-rate",
+        min=0.0,
+        max=1.0,
+        help=(
+            "Exit 2 if exact_overlap.rate or normalized_overlap.rate exceeds this "
+            "threshold (CI gate). Report is still written."
         ),
     ),
 ) -> None:
@@ -158,26 +213,38 @@ def compare(
         console.print(f"[red]Error:[/red] {exc}")
         raise typer.Exit(code=EXIT_ERROR) from exc
 
+    gate = evaluate_compare_gate(
+        report,
+        fail_on_overlap=fail_on_overlap,
+        max_overlap_rate=max_overlap_rate,
+    )
+    if gate is not None:
+        report = report.model_copy(
+            update={
+                "gate": gate,
+                "configuration": report.configuration.model_copy(
+                    update={
+                        "fail_on_overlap": fail_on_overlap,
+                        "max_overlap_rate": max_overlap_rate,
+                    }
+                ),
+            }
+        )
+
     report_path = output or Path("rupudata-compare.json")
     written = write_json_report(report, report_path)
     render_compare_terminal(report, str(written))
 
-    if fail_on_overlap and _compare_has_overlap(report):
-        exact = report.result.exact_overlap.shared_records
-        normalized = report.result.normalized_overlap.shared_records
-        console.print(
-            f"[red]Overlap detected[/red] "
-            f"(exact={exact}, normalized={normalized}); "
-            f"exiting {EXIT_OVERLAP} (--fail-on-overlap)."
-        )
-        raise typer.Exit(code=EXIT_OVERLAP)
+    if gate is not None and not gate.passed:
+        _print_gate_failure(gate)
+        raise typer.Exit(code=EXIT_POLICY)
 
 
 @app.command(
     "benchmark-check",
     help=(
         "Check dataset vs benchmark text overlap "
-        "(--reference, --fail-on-overlap)."
+        "(--reference, --fail-on-overlap, --max-overlap-rate)."
     ),
 )
 def benchmark_check(
@@ -209,8 +276,18 @@ def benchmark_check(
         False,
         "--fail-on-overlap",
         help=(
-            "Exit 2 if OVERLAP_DETECTED "
-            "(CI/pipeline gate). Report is still written."
+            "Exit 2 if exact or normalized match rate > 0 "
+            "(same as --max-overlap-rate 0). Report is still written."
+        ),
+    ),
+    max_overlap_rate: Optional[float] = typer.Option(
+        None,
+        "--max-overlap-rate",
+        min=0.0,
+        max=1.0,
+        help=(
+            "Exit 2 if exact_rate or normalized_rate exceeds this threshold "
+            "(CI gate). Report is still written."
         ),
     ),
 ) -> None:
@@ -223,19 +300,31 @@ def benchmark_check(
         console.print(f"[red]Error:[/red] {exc}")
         raise typer.Exit(code=EXIT_ERROR) from exc
 
+    gate = evaluate_benchmark_gate(
+        report,
+        fail_on_overlap=fail_on_overlap,
+        max_overlap_rate=max_overlap_rate,
+    )
+    if gate is not None:
+        report = report.model_copy(
+            update={
+                "gate": gate,
+                "configuration": report.configuration.model_copy(
+                    update={
+                        "fail_on_overlap": fail_on_overlap,
+                        "max_overlap_rate": max_overlap_rate,
+                    }
+                ),
+            }
+        )
+
     report_path = output or Path("rupudata-benchmark.json")
     written = write_json_report(report, report_path)
     render_benchmark_terminal(report, str(written))
 
-    if fail_on_overlap and _benchmark_has_overlap(report):
-        console.print(
-            f"[red]Overlap detected[/red] "
-            f"(status={report.result.status}, "
-            f"exact={report.result.exact_matches}, "
-            f"normalized={report.result.normalized_matches}); "
-            f"exiting {EXIT_OVERLAP} (--fail-on-overlap)."
-        )
-        raise typer.Exit(code=EXIT_OVERLAP)
+    if gate is not None and not gate.passed:
+        _print_gate_failure(gate)
+        raise typer.Exit(code=EXIT_POLICY)
 
 
 @app.callback()

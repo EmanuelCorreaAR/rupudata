@@ -32,6 +32,7 @@ from rupudata.core.models import (
     TextExtractionSpec,
 )
 from rupudata.core.normalization import fingerprint_dataframe
+from rupudata.core.policy import NOTE_MATCH_RATE, match_rate
 from rupudata.core.reader import file_size_bytes, read_dataset
 
 
@@ -91,6 +92,7 @@ def check_benchmark(
         NOTE_TECHNICAL_SIGNALS,
         NOTE_NOT_CONTAMINATION,
         NOTE_ROW_INDICES,
+        NOTE_MATCH_RATE,
         "Extracted-text overlap: one plain text per record via text_extraction "
         f"(strategy=first_non_empty over {fields}); other fields do not affect matching.",
         "Interpretation of whether overlap constitutes contamination depends on context.",
@@ -103,6 +105,7 @@ def check_benchmark(
         candidate_fields=fields,
     )
 
+    rows = df.height
     return BenchmarkCheckReport(
         version=__version__,
         input=BenchmarkInput(
@@ -137,6 +140,8 @@ def check_benchmark(
             exact_matches=exact_ev.unique_texts,
             normalized_matches=norm_ev.unique_texts,
             near_matches=0,
+            exact_rate=match_rate(exact_ev.unique_texts, rows),
+            normalized_rate=match_rate(norm_ev.unique_texts, rows),
             status=status,
             matches=MatchEvidence(
                 exact=_to_items(exact_ev.pairs),

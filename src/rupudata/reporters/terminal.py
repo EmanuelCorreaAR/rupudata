@@ -26,6 +26,29 @@ def _format_bytes(n: int) -> str:
     return f"{n} B"
 
 
+def _render_gate(report_gate, console: Console) -> None:
+    if report_gate is None:
+        return
+    status = "PASSED" if report_gate.passed else "FAILED"
+    style = "green" if report_gate.passed else "red"
+    table = Table(show_header=True, box=None, padding=(0, 2))
+    table.add_column("metric")
+    table.add_column("actual")
+    table.add_column("threshold")
+    table.add_column("ok")
+    for rule in report_gate.rules:
+        table.add_row(
+            rule.metric,
+            f"{rule.actual:.6g}",
+            f"{rule.threshold:.6g}",
+            "yes" if rule.passed else "no",
+        )
+    console.print(f"[bold {style}]Policy gate: {status}[/bold {style}]")
+    console.print("─" * 30)
+    console.print(table)
+    console.print()
+
+
 def _header(version: str, console: Console) -> None:
     console.print(
         Panel.fit(
@@ -93,6 +116,8 @@ def render_terminal(report: ScanReport, output_path: str, console: Console | Non
         console.print(ev)
         console.print()
 
+    _render_gate(report.gate, console)
+
     console.print(f"Report written to:\n[bold]{output_path}[/bold]\n")
     for note in report.notes:
         console.print(f"[dim]• {note}[/dim]")
@@ -127,7 +152,9 @@ def render_compare_terminal(
     if report.method.field:
         overlap.add_row("Field", report.method.field)
     overlap.add_row("Exact overlap", f"{exact.shared_records:,}")
+    overlap.add_row("Exact overlap rate", f"{exact.rate:.6g}")
     overlap.add_row("Normalized overlap", f"{normalized.shared_records:,}")
+    overlap.add_row("Normalized overlap rate", f"{normalized.rate:.6g}")
     overlap.add_row("Only in A (exact)", f"{exact.only_in_a:,}")
     overlap.add_row("Only in B (exact)", f"{exact.only_in_b:,}")
     overlap.add_row("Evidence pairs (exact)", f"{len(report.result.matches.exact):,}")
@@ -199,6 +226,8 @@ def render_compare_terminal(
         console.print(diff_table)
         console.print()
 
+    _render_gate(report.gate, console)
+
     console.print(f"Report written to:\n[bold]{output_path}[/bold]\n")
     for note in report.notes:
         console.print(f"[dim]• {note}[/dim]")
@@ -231,7 +260,9 @@ def render_benchmark_terminal(
     matches.add_column(style="bold")
     matches.add_column()
     matches.add_row("Exact matches", f"{report.result.exact_matches:,}")
+    matches.add_row("Exact match rate", f"{report.result.exact_rate:.6g}")
     matches.add_row("Normalized matches", f"{report.result.normalized_matches:,}")
+    matches.add_row("Normalized match rate", f"{report.result.normalized_rate:.6g}")
     matches.add_row("Near matches", "n/a (disabled)")
     matches.add_row("Status", report.result.status)
     matches.add_row("Evidence pairs (exact)", f"{len(report.result.matches.exact):,}")
@@ -260,6 +291,8 @@ def render_benchmark_terminal(
         console.print("─" * 30)
         console.print(ev)
         console.print()
+
+    _render_gate(report.gate, console)
 
     console.print(f"Report written to:\n[bold]{output_path}[/bold]\n")
     for note in report.notes:

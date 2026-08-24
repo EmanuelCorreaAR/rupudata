@@ -34,6 +34,22 @@ UNIT_FIELD_TEXT = "field_text"
 UNIT_EXTRACTED_TEXT = "extracted_text"
 
 
+class GateRule(BaseModel):
+    """One quality-policy threshold check (actual <= threshold passes)."""
+
+    metric: str
+    threshold: float
+    actual: float
+    passed: bool
+
+
+class GateResult(BaseModel):
+    """Aggregated policy decision when CI gates were configured."""
+
+    passed: bool
+    rules: list[GateRule] = Field(default_factory=list)
+
+
 class MinHashInfo(BaseModel):
     """Whether MinHash/LSH was actually used for candidate generation."""
 
@@ -189,6 +205,8 @@ class NearDuplicateConfiguration(BaseModel):
 class ScanConfiguration(BaseModel):
     row_index_base: int = ROW_INDEX_BASE_DEFAULT
     near_duplicates: NearDuplicateConfiguration
+    max_duplicate_rate: Optional[float] = None
+    max_near_duplicate_rate: Optional[float] = None
 
 
 class NearDuplicateMethod(BaseModel):
@@ -214,6 +232,8 @@ class ScanMethod(BaseModel):
 
 
 class ExactDuplicateResult(BaseModel):
+    """Exact-duplicate finding (count ≡ duplicate_records)."""
+
     total_records: int
     unique_records: int
     duplicate_records: int
@@ -230,6 +250,8 @@ class NearDuplicateEvidenceItem(BaseModel):
 
 
 class NearDuplicateResult(BaseModel):
+    """Near-duplicate finding (count ≡ pairs; rate ≡ record_rate)."""
+
     pairs: int
     records_flagged: int
     record_rate: float
@@ -254,6 +276,7 @@ class ScanReport(BaseModel):
     configuration: ScanConfiguration
     method: ScanMethod
     result: ScanResult
+    gate: Optional[GateResult] = None
     notes: list[str] = Field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
@@ -273,9 +296,16 @@ class DatasetRef(BaseModel):
 
 
 class OverlapStats(BaseModel):
+    """Overlap finding for one match mode (count ≡ shared_records).
+
+    ``rate`` = shared_records / min(unique_a, unique_b) where
+    unique_* = shared_records + only_in_*.
+    """
+
     shared_records: int
     only_in_a: int
     only_in_b: int
+    rate: float = 0.0
 
 
 class CompareInput(BaseModel):
@@ -289,6 +319,8 @@ class CompareConfiguration(BaseModel):
     max_evidence_pairs: int = DEFAULT_MAX_EVIDENCE_PAIRS
     row_index_base: int = ROW_INDEX_BASE_DEFAULT
     field: Optional[str] = None
+    max_overlap_rate: Optional[float] = None
+    fail_on_overlap: bool = False
 
 
 class CompareMethod(BaseModel):
@@ -361,6 +393,7 @@ class CompareReport(BaseModel):
     configuration: CompareConfiguration = Field(default_factory=CompareConfiguration)
     method: CompareMethod = Field(default_factory=CompareMethod)
     result: CompareResult
+    gate: Optional[GateResult] = None
     notes: list[str] = Field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
@@ -387,6 +420,8 @@ class BenchmarkConfiguration(BaseModel):
     match_near_duplicate: bool = False
     max_evidence_pairs: int = DEFAULT_MAX_EVIDENCE_PAIRS
     row_index_base: int = ROW_INDEX_BASE_DEFAULT
+    max_overlap_rate: Optional[float] = None
+    fail_on_overlap: bool = False
 
 
 class TextExtractionSpec(BaseModel):
@@ -424,9 +459,13 @@ class MatchEvidence(BaseModel):
 
 
 class BenchmarkResult(BaseModel):
+    """Benchmark overlap finding (count ≡ *_matches; rates vs dataset_rows)."""
+
     exact_matches: int
     normalized_matches: int
     near_matches: int = 0
+    exact_rate: float = 0.0
+    normalized_rate: float = 0.0
     status: str
     matches: MatchEvidence = Field(default_factory=MatchEvidence)
 
@@ -442,7 +481,8 @@ class BenchmarkCheckReport(BaseModel):
     configuration: BenchmarkConfiguration
     method: BenchmarkMethod
     result: BenchmarkResult
+    gate: Optional[GateResult] = None
     notes: list[str] = Field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
-        return self.model_dump(mode="json")
+        return self.model_dump(mode="json", exclude_none=True)

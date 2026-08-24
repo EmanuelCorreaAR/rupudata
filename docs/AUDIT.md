@@ -3,12 +3,30 @@
 RupuData JSON reports follow:
 
 ```text
-input → configuration → method → result
+input → configuration → method → result → (optional) gate
 ```
 
 Reports are **technical signals, not legal certification.**
 
 Defaults: `rupudata-report.json`, `rupudata-compare.json`, `rupudata-benchmark.json`.
+
+## Finding vocabulary
+
+Findings are not identical across commands, but share a predictable idea:
+
+| Idea | scan exact | scan near | compare | benchmark-check |
+|------|------------|-----------|---------|-----------------|
+| count | `duplicate_records` | `pairs` | `shared_records` | `*_matches` |
+| rate | `duplicate_rate` | `record_rate` | `rate` | `*_rate` |
+| evidence | — | `evidence[]` | `matches.*` | `matches.*` |
+| truncated | — | `evidence_truncated` | `*_truncated` | `*_truncated` |
+
+### Rate definitions
+
+- **Compare overlap rate:** `shared_records / min(unique_a, unique_b)` where `unique_* = shared_records + only_in_*`.
+- **Benchmark match rate:** `matched_unique_texts / dataset_rows`.
+- **Scan duplicate rate:** `duplicate_records / total_records`.
+- **Scan near-dupe rate:** `records_flagged / total_records` (`record_rate`).
 
 ## Matching model (source → unit → spec)
 
@@ -43,15 +61,44 @@ Defaults: `rupudata-report.json`, `rupudata-compare.json`, `rupudata-benchmark.j
 
 Evidence documents the **finding** (which rows, which score). It does not embed full record text — open the dataset at those indices to inspect content.
 
+## Quality policy gates (0.9+)
+
+When CI flags are set, reports include a top-level `gate` object:
+
+```json
+"gate": {
+  "passed": false,
+  "rules": [
+    {
+      "metric": "normalized_overlap_rate",
+      "threshold": 0.001,
+      "actual": 0.0032,
+      "passed": false
+    }
+  ]
+}
+```
+
+A rule **passes** when `actual <= threshold`.
+
+| Flag | Commands | Metrics |
+|------|----------|---------|
+| `--fail-on-overlap` | compare, benchmark-check | rates must be `0` (sugar for `--max-overlap-rate 0`) |
+| `--max-overlap-rate` | compare, benchmark-check | `exact_*_rate` and `normalized_*_rate` |
+| `--max-duplicate-rate` | scan | `duplicate_rate` |
+| `--max-near-duplicate-rate` | scan | `near_duplicate_rate` (`record_rate`) |
+
+`gate` is omitted when no policy flags are set.
+
 ## CI / pipeline exit codes
 
 | Code | Meaning |
 |------|---------|
 | `0` | Success (no policy failure) |
 | `1` | I/O or usage error |
-| `2` | Overlap found with `--fail-on-overlap` (`compare` / `benchmark-check`) |
+| `2` | Configured quality gate failed |
 
-Without `--fail-on-overlap`, overlap is reported in the JSON/terminal and the process still exits `0`.
+Without policy flags, findings are reported and the process still exits `0`.
 
 ## What “normalized” means (fingerprint + scan exact duplicates)
 

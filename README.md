@@ -22,13 +22,15 @@ rupudata scan dataset.jsonl
 rupudata compare train.jsonl eval.jsonl
 rupudata compare train.jsonl eval.jsonl --text-field question
 rupudata compare train.jsonl eval.jsonl --fail-on-overlap
+rupudata compare train.jsonl eval.jsonl --max-overlap-rate 0.001
+rupudata scan train.jsonl --max-duplicate-rate 0 --max-near-duplicate-rate 0.01
 rupudata benchmark-check train.jsonl --benchmark gsm8k
 rupudata benchmark-check train.jsonl --benchmark gsm8k --fail-on-overlap
 ```
 
 `compare` defaults to **full records**. Use `--text-field` when only one column should participate in matching.
 
-`--fail-on-overlap` exits **2** when exact or normalized overlap is found (CI gate). Exit **1** is reserved for errors. The JSON report is written either way.
+Policy gates (`--fail-on-overlap`, `--max-*-rate`) exit **2** when thresholds are exceeded. Exit **1** is reserved for errors. The JSON report (including `gate`) is written either way.
 
 ## Real-world example (GSM8K)
 
@@ -166,11 +168,11 @@ rupudata scan examples/near_dupes.jsonl --near-duplicate-threshold 0.85
 
 ## Status
 
-`0.8.1` — clearer CLI help; `--fail-on-overlap` on `compare` / `benchmark-check`.
+`0.9.0` — quality policy gates (`--max-*-rate`) + explicit rates; optional `gate` in the audit JSON.
 
 **Not in this release (on purpose):** semantic / paraphrase matching, streaming multi-GB scans, provenance/license detectors.
 
-**Next:** driven by real usage.
+**Next:** stabilize the audit contract toward 1.0.
 
 ## Development
 
