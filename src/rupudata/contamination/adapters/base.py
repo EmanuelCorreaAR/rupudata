@@ -23,10 +23,12 @@ class BenchmarkAdapter(Protocol):
     id: str
     name: str
     description: str
-    notes: tuple[str, ...]
 
     def candidate_fields(self) -> list[str]:
         """Ordered candidate field names for text extraction (first_non_empty)."""
 
     def load_reference(self, reference: Path | None = None) -> ReferenceLoad:
         """Load packaged sample or user-supplied reference dataset."""
+
+    def notes_for_reference(self, source: str) -> tuple[str, ...]:
+        """Audit notes that describe the reference actually used in this report."""

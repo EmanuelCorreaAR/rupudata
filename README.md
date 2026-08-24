@@ -4,9 +4,9 @@
 
 **Follow the path of your data.**
 
-RupuData detects **dataset duplicates**, **train/eval overlap**, and **benchmark overlap signals** — locally, with deterministic, machine-readable audit reports.
+RupuData answers an uncomfortable question: **does my training data overlap with data I use to evaluate my model?**
 
-Compare datasets, scan for duplicates, and check whether training data overlaps known evaluation benchmarks. Technical signals, not legal certification.
+It detects **dataset duplicates**, **train/eval overlap**, and **benchmark overlap signals** — locally, with deterministic, machine-readable audit reports. Technical signals, not legal certification.
 
 ## Install
 
@@ -32,26 +32,65 @@ rupudata benchmark-check train.jsonl --benchmark gsm8k
 
 Three commands. One goal: understand whether data overlaps where it shouldn't.
 
-### Example output (`compare`)
+## Real-world example (GSM8K)
 
-From the repo `examples/`:
+Against the full GSM8K **test** split as `--reference` (1,319 questions), a 7,476-row training file with three injected test questions reports:
+
+```bash
+rupudata benchmark-check leak.jsonl \
+  --benchmark gsm8k \
+  --reference gsm8k_test.jsonl
+```
 
 ```text
-RupuData v0.6.4
+RupuData v0.6.5
 
-Exact overlap:       1
-Normalized overlap:  2
+Dataset:       7,476 records
+Reference:     GSM8K test — 1,319 records (user_reference)
 
-Evidence (sample)
-  dataset_a_row  dataset_b_row
-  0              0
+Exact matches:       3
+Normalized matches:  3
+Near matches:        0
+
+Status: OVERLAP_DETECTED
+
+Evidence
+  dataset_row  reference_row  field
+  0            0              question
+  1            1              question
+  2            2              question
+```
+
+**3 exact GSM8K test-set overlaps detected** under the configured matching methodology.
+
+RupuData reports textual overlap. It does **not** determine why the overlap exists or certify that a model or dataset is contaminated.
+
+On the clean GSM8K **train** split (7,473 records) alone:
+
+```bash
+rupudata scan gsm8k_train.jsonl
+```
+
+→ no exact duplicates; only **2** lexical near-duplicate pairs flagged (Jaccard ≥ 0.85, MinHash/LSH).
+
+```text
+7,476 training records
+        │
+        ▼
+     RupuData
+        │
+        ├── scan: 0 exact duplicates, 2 near-dupe pairs
+        │
+        ▼
+   GSM8K test (1,319) via --reference
+        │
+        ▼
+   3 exact overlaps → OVERLAP_DETECTED
 ```
 
 ### Benchmark reference: demo sample vs real audit
 
-Status is `OVERLAP_DETECTED` or `NO_OVERLAP_DETECTED` under the matching methodology — **not** a claim that a model is contaminated.
-
-> **Warning:** The packaged GSM8K reference is a **tiny demo sample**, not the full benchmark. A `NO_OVERLAP_DETECTED` result against the sample does **not** mean your dataset is free of GSM8K. For an actual audit, provide the benchmark export with `--reference`.
+> **Warning:** Without `--reference`, default `gsm8k` uses a **tiny packaged sample**. A `NO_OVERLAP_DETECTED` against that sample does **not** mean your dataset is free of GSM8K. For an actual audit, pass the real export with `--reference`.
 
 ```bash
 rupudata benchmark-check train.jsonl --benchmark gsm8k --reference /path/to/gsm8k.jsonl
@@ -88,8 +127,6 @@ rupudata compare train.jsonl eval.jsonl --text-field text
 
 ## Try the packaged examples
 
-Clone the repo (or download `examples/` from GitHub):
-
 ```bash
 git clone https://github.com/EmanuelCorreaAR/rupudata.git
 cd rupudata
@@ -102,7 +139,7 @@ rupudata scan examples/near_dupes.jsonl --near-duplicate-threshold 0.85
 
 ## Status
 
-`0.6.4` — PyPI description aligned with product wording (overlap signals).
+`0.6.5` — contextual benchmark notes + real-world GSM8K README demo.
 
 **Not in this release (on purpose):** semantic / paraphrase matching, CI fail gates, streaming multi-GB scans, provenance/license detectors.
 

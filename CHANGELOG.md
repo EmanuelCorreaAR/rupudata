@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.6.5] - 2026-08-23
+### Changed
+- Benchmark notes are contextual to `input.reference_source` (packaged sample vs user-provided reference)
+- README: real-world GSM8K demo (7k+ rows, 3 exact test overlaps) without claiming “contamination”
+
 ## [0.6.4] - 2026-08-23
 ### Changed
 - Align PyPI package description with README wording (benchmark *overlap* signals, not contamination)

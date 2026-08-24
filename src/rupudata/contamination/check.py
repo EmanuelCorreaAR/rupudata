@@ -95,7 +95,7 @@ def check_benchmark(
         f"(strategy=first_non_empty over {fields}); other fields do not affect matching.",
         "Interpretation of whether overlap constitutes contamination depends on context.",
         "Near-duplicate / paraphrase / translation matching is not included in this release.",
-        *adapter.notes,
+        *adapter.notes_for_reference(loaded.source),
     ]
 
     extraction = TextExtractionSpec(

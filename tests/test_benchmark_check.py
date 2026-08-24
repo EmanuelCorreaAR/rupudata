@@ -114,3 +114,12 @@ def test_user_reference_path(tmp_path: Path) -> None:
     report = check_benchmark(TRAIN, "gsm8k", reference=ref)
     assert report.input.reference_source == "user_reference"
     assert report.result.normalized_matches >= 1
+    assert any("user-provided reference" in n for n in report.notes)
+    assert not any("This report uses the packaged SAMPLE" in n for n in report.notes)
+
+
+def test_packaged_sample_notes_mention_sample_not_full_corpus() -> None:
+    report = check_benchmark(TRAIN, "gsm8k")
+    assert report.input.reference_source == "packaged_sample"
+    assert any("packaged SAMPLE" in n for n in report.notes)
+    assert any("input.reference_source" in n for n in report.notes)
