@@ -37,7 +37,7 @@ Tres comandos. Un objetivo: entender si los datos se solapan donde no deberían.
 Desde `examples/` del repo:
 
 ```text
-RupuData v0.6.3
+RupuData v0.6.4
 
 Exact overlap:       1
 Normalized overlap:  2
@@ -100,7 +100,7 @@ rupudata scan examples/near_dupes.jsonl --near-duplicate-threshold 0.85
 
 ## Estado
 
-`0.6.3` — release de producto: instalación desde PyPI, docs de usuario, CI.
+`0.6.4` — descripción de PyPI alineada con el wording de producto (señales de overlap).
 
 **No en este release (a propósito):** matching semántico / paráfrasis, gates de CI, scans streaming multi-GB, detectores de provenance/licencia.
 

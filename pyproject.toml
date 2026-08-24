@@ -4,8 +4,8 @@ build-backend = "hatchling.build"
 
 [project]
 name = "rupudata"
-version = "0.6.3"
-description = "Local-first CLI to detect dataset overlap, duplicates, and benchmark contamination signals — with deterministic audit reports."
+version = "0.6.4"
+description = "Local-first CLI to detect dataset duplicates, train/eval overlap, and benchmark overlap signals — with deterministic, machine-readable audit reports."
 readme = "README.md"
 license = "Apache-2.0"
 requires-python = ">=3.9"

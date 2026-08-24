@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.6.4] - 2026-08-23
+### Changed
+- Align PyPI package description with README wording (benchmark *overlap* signals, not contamination)
+
 ## [0.6.3] - 2026-08-23
 ### Added
 - GitHub Actions CI: pytest on Python 3.9–3.12, wheel build, clean-venv smoke (`rupudata --help`, compare, benchmark-check)
