@@ -24,9 +24,14 @@ from typing import Any, Iterable
 
 import polars as pl
 
-from rupudata.core.models import MinHashInfo, NearDuplicateMethod, NearDuplicateResult
+from rupudata.core.models import (
+    DEFAULT_MAX_EVIDENCE_PAIRS,
+    MinHashInfo,
+    NearDuplicateEvidenceItem,
+    NearDuplicateMethod,
+    NearDuplicateResult,
+)
 from rupudata.core.normalization import hash_record
-
 
 PAIRWISE_LIMIT = 250
 
@@ -38,6 +43,7 @@ class NearDuplicateConfig:
     num_perm: int = 64
     seed: int = 42
     enabled: bool = True
+    max_evidence: int = DEFAULT_MAX_EVIDENCE_PAIRS
 
 
 @dataclass(frozen=True)
@@ -48,18 +54,24 @@ class NearDuplicateAnalysis:
     result: NearDuplicateResult
 
 
+def record_text_and_field(record: dict[str, Any]) -> tuple[str, str | None]:
+    """Extract comparable text and the field name used (when a single field)."""
+    if "text" in record and record["text"] is not None:
+        return str(record["text"]).strip(), "text"
+    string_keys = [key for key, value in record.items() if isinstance(value, str)]
+    if len(string_keys) == 1:
+        key = string_keys[0]
+        return str(record[key]).strip(), key
+    if string_keys:
+        parts = [str(record[key]).strip() for key in sorted(string_keys)]
+        return " ".join(parts), None
+    return "", None
+
+
 def record_text(record: dict[str, Any]) -> str:
     """Extract comparable text from a record."""
-    if "text" in record and record["text"] is not None:
-        return str(record["text"]).strip()
-    parts: list[str] = []
-    for key in sorted(record):
-        value = record[key]
-        if isinstance(value, str):
-            parts.append(value.strip())
-    if parts:
-        return " ".join(parts)
-    return ""
+    text, _ = record_text_and_field(record)
+    return text
 
 
 def char_shingles(text: str, size: int) -> set[str]:
@@ -166,7 +178,9 @@ def analyze_near_duplicates(
         )
 
     rows = list(df.iter_rows(named=True))
-    texts = [record_text(row) for row in rows]
+    text_fields = [record_text_and_field(row) for row in rows]
+    texts = [text for text, _ in text_fields]
+    fields = [field for _, field in text_fields]
     exact_hashes = [hash_record(row) for row in rows]
     shingle_sets = [char_shingles(text, cfg.shingle_size) for text in texts]
 
@@ -184,14 +198,30 @@ def analyze_near_duplicates(
 
     near_pairs = 0
     flagged: set[int] = set()
+    evidence: list[NearDuplicateEvidenceItem] = []
+    truncated = False
     for i, j in candidate_pairs:
         if exact_hashes[i] == exact_hashes[j]:
             continue  # counted under exact duplicates
         score = jaccard(shingle_sets[i], shingle_sets[j])
-        if score >= cfg.threshold:
-            near_pairs += 1
-            flagged.add(i)
-            flagged.add(j)
+        if score < cfg.threshold:
+            continue
+        near_pairs += 1
+        flagged.add(i)
+        flagged.add(j)
+        if len(evidence) < cfg.max_evidence:
+            # Prefer a shared single-field label when both sides used the same source.
+            field = fields[i] if fields[i] == fields[j] else None
+            evidence.append(
+                NearDuplicateEvidenceItem(
+                    left=i,
+                    right=j,
+                    jaccard=round(score, 4),
+                    field=field,
+                )
+            )
+        else:
+            truncated = True
 
     rate = len(flagged) / total if total else 0.0
     return NearDuplicateAnalysis(
@@ -203,5 +233,7 @@ def analyze_near_duplicates(
             pairs=near_pairs,
             records_flagged=len(flagged),
             record_rate=round(rate, 6),
+            evidence=evidence,
+            evidence_truncated=truncated,
         ),
     )

@@ -75,6 +75,24 @@ def render_terminal(report: ScanReport, output_path: str, console: Console | Non
     console.print(dupes)
     console.print()
 
+    if cfg.enabled and near.evidence:
+        ev = Table(show_header=True, box=None, padding=(0, 2))
+        ev.add_column("left")
+        ev.add_column("right")
+        ev.add_column("jaccard")
+        ev.add_column("field")
+        for item in near.evidence[:5]:
+            ev.add_row(
+                str(item.left),
+                str(item.right),
+                f"{item.jaccard:.4f}",
+                item.field or "—",
+            )
+        console.print("[bold cyan]Near-duplicate evidence (sample)[/bold cyan]")
+        console.print("─" * 30)
+        console.print(ev)
+        console.print()
+
     console.print(f"Report written to:\n[bold]{output_path}[/bold]\n")
     for note in report.notes:
         console.print(f"[dim]• {note}[/dim]")

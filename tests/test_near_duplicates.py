@@ -60,16 +60,38 @@ def test_analyze_near_dupes_fixture() -> None:
     )
     assert analysis.result.pairs >= 1
     assert analysis.result.records_flagged >= 2
+    assert analysis.result.evidence
+    assert analysis.result.evidence[0].left < analysis.result.evidence[0].right
+    assert analysis.result.evidence[0].jaccard >= 0.85
+    assert analysis.result.evidence[0].field == "text"
     assert analysis.method.similarity == "character_shingles+jaccard"
     assert analysis.method.candidate_generation == "pairwise"
     assert analysis.method.minhash.enabled is False
     assert analysis.method.minhash.num_perm is None
 
 
+def test_near_dupe_evidence_truncates() -> None:
+    texts = [
+        "The capital of France is Paris.",
+        "The capital of France is Paris!",
+        "The capital of France is Paris?",
+        "Completely unrelated alpine goats content here.",
+    ]
+    df = pl.DataFrame({"text": texts})
+    analysis = analyze_near_duplicates(
+        df,
+        NearDuplicateConfig(threshold=0.85, max_evidence=1),
+    )
+    assert analysis.result.pairs >= 2
+    assert len(analysis.result.evidence) == 1
+    assert analysis.result.evidence_truncated is True
+
+
 def test_exact_duplicates_not_counted_as_near() -> None:
     df = pl.DataFrame({"text": ["same text", "same text", "different enough content here"]})
     analysis = analyze_near_duplicates(df, NearDuplicateConfig(threshold=0.85))
     assert analysis.result.pairs == 0
+    assert analysis.result.evidence == []
 
 
 def test_large_dataset_uses_minhash_lsh_in_report() -> None:
@@ -93,6 +115,7 @@ def test_large_dataset_uses_minhash_lsh_in_report() -> None:
 def test_scan_includes_near_duplicates() -> None:
     report = scan_dataset(NEAR)
     assert report.result.near_duplicates.pairs >= 1
+    assert report.result.near_duplicates.evidence
     assert report.contract == "technical_audit"
     assert report.version.startswith("0.")
 
@@ -122,13 +145,17 @@ def test_scan_near_threshold_cli(tmp_path: Path) -> None:
             str(out),
             "--near-duplicate-threshold",
             "0.85",
+            "--max-evidence",
+            "50",
         ],
     )
     assert result.exit_code == 0, result.output
     assert "Near-dupe pairs" in result.output
+    assert "Near-duplicate evidence" in result.output
     payload = json.loads(out.read_text(encoding="utf-8"))
     assert payload["contract"] == "technical_audit"
     assert payload["configuration"]["near_duplicates"]["threshold"] == 0.85
+    assert payload["configuration"]["near_duplicates"]["max_evidence_pairs"] == 50
     assert payload["configuration"]["near_duplicates"]["shingle"] == {
         "unit": "character",
         "size": 5,
@@ -138,8 +165,11 @@ def test_scan_near_threshold_cli(tmp_path: Path) -> None:
         "size": 5,
     }
     assert payload["method"]["near_duplicates"]["candidate_generation"] == "pairwise"
-    assert payload["method"]["near_duplicates"]["minhash"] == {
-        "enabled": False,
-        "num_perm": None,
-    }
+    assert payload["method"]["near_duplicates"]["minhash"]["enabled"] is False
+    assert payload["method"]["near_duplicates"]["minhash"].get("num_perm") is None
     assert payload["result"]["near_duplicates"]["pairs"] >= 1
+    evidence = payload["result"]["near_duplicates"]["evidence"]
+    assert evidence
+    assert "left" in evidence[0] and "right" in evidence[0]
+    assert evidence[0]["jaccard"] >= 0.85
+    assert evidence[0]["field"] == "text"

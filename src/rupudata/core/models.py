@@ -183,6 +183,7 @@ class NearDuplicateConfiguration(BaseModel):
     threshold: float
     shingle: ShingleSpec
     num_perm: int
+    max_evidence_pairs: int = DEFAULT_MAX_EVIDENCE_PAIRS
 
 
 class ScanConfiguration(BaseModel):
@@ -219,10 +220,21 @@ class ExactDuplicateResult(BaseModel):
     duplicate_rate: float
 
 
+class NearDuplicateEvidenceItem(BaseModel):
+    """One near-duplicate pair for audit evidence (0-based row indices)."""
+
+    left: int
+    right: int
+    jaccard: float
+    field: Optional[str] = None
+
+
 class NearDuplicateResult(BaseModel):
     pairs: int
     records_flagged: int
     record_rate: float
+    evidence: list[NearDuplicateEvidenceItem] = Field(default_factory=list)
+    evidence_truncated: bool = False
 
 
 class ScanResult(BaseModel):
@@ -245,7 +257,7 @@ class ScanReport(BaseModel):
     notes: list[str] = Field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
-        return self.model_dump(mode="json")
+        return self.model_dump(mode="json", exclude_none=True)
 
 
 # --- compare ---------------------------------------------------------------

@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.7.0] - 2026-08-24
+### Added
+- Scan near-duplicate **evidence** in the JSON contract: `left` / `right` row indices, `jaccard`, optional `field` (capped by `--max-evidence`)
+- Terminal sample of near-duplicate evidence pairs
+
 ## [0.6.6] - 2026-08-23
 ### Changed
 - README terminal examples match real CLI output from GSM8K scan / compare / leak benchmark-check runs

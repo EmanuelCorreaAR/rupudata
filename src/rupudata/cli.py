@@ -61,6 +61,12 @@ def scan(
         "--skip-near-duplicates",
         help="Skip near-duplicate analysis (faster on large files).",
     ),
+    max_evidence: int = typer.Option(
+        100,
+        "--max-evidence",
+        min=1,
+        help="Max near-duplicate evidence pairs in the JSON report.",
+    ),
 ) -> None:
     """Inspect a dataset: structure, fingerprint, exact and near duplicates."""
     config = NearDuplicateConfig(
@@ -68,6 +74,7 @@ def scan(
         shingle_size=shingle_size,
         num_perm=num_perm,
         enabled=not skip_near_duplicates,
+        max_evidence=max_evidence,
     )
     try:
         report = scan_dataset(path, near_config=config)

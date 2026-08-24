@@ -120,7 +120,7 @@ Duplicates
   Candidates          minhash_lsh
 ```
 
-Esos **2 pares near-dupe** (shingles de caracteres, Jaccard ≥ 0.85) son filas reales del train de GSM8K — no fixtures:
+Esos **2 pares near-dupe** (shingles de caracteres, Jaccard ≥ 0.85) son filas reales del train de GSM8K — no fixtures. Desde `0.7.0`, el JSON de `scan` incluye evidencia auditable (`left` / `right` / `jaccard` / `field`) — un tercero no necesita re-correr el CLI para verificar Josie → Amanda.
 
 | Filas | Jaccard | Qué cambia |
 |------|---------|------------|
@@ -207,7 +207,7 @@ rupudata scan examples/near_dupes.jsonl --near-duplicate-threshold 0.85
 
 ## Estado
 
-`0.6.6` — ejemplos del README alineados al output real de la CLI en corridas GSM8K.
+`0.7.0` — evidencia de near-duplicates en el contrato JSON de `scan` (`left` / `right` / `jaccard` / `field`).
 
 **No en este release (a propósito):** matching semántico / paráfrasis, gates de CI, scans streaming multi-GB, detectores de provenance/licencia.
 

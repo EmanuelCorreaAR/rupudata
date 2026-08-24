@@ -8,6 +8,7 @@ from rupudata import __version__
 from rupudata.analyzers.duplicates import analyze_exact_duplicates
 from rupudata.analyzers.near_duplicates import NearDuplicateConfig, analyze_near_duplicates
 from rupudata.core.models import (
+    DEFAULT_MAX_EVIDENCE_PAIRS,
     NOTE_CONTRACT,
     NOTE_NOT_CONTAMINATION,
     NOTE_ROW_INDICES,
@@ -50,6 +51,7 @@ def scan_dataset(
         NOTE_ROW_INDICES,
         "Fingerprint and exact_duplicates hash full records with record_normalized_v1.",
         "Near-duplicates measure lexical similarity only — not paraphrases or translations.",
+        "Near-duplicate evidence lists row pairs + Jaccard (field when a single text source is used).",
     ]
     if not cfg.enabled:
         notes = [
@@ -92,6 +94,9 @@ def scan_dataset(
                 threshold=cfg.threshold,
                 shingle=shingle,
                 num_perm=cfg.num_perm,
+                max_evidence_pairs=cfg.max_evidence
+                if cfg.enabled
+                else DEFAULT_MAX_EVIDENCE_PAIRS,
             ),
         ),
         method=ScanMethod(
