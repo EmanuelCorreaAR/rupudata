@@ -166,7 +166,7 @@ rupudata scan examples/near_dupes.jsonl --near-duplicate-threshold 0.85
 
 ## Status
 
-`0.8.0` — `--fail-on-overlap` for CI/pipelines on `compare` and `benchmark-check`.
+`0.8.1` — clearer CLI help; `--fail-on-overlap` on `compare` / `benchmark-check`.
 
 **Not in this release (on purpose):** semantic / paraphrase matching, streaming multi-GB scans, provenance/license detectors.
 

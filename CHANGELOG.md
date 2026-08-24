@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.8.1] - 2026-08-24
+### Changed
+- Top-level `--help` points to per-command help and surfaces `--text-field` / `--fail-on-overlap`
+
 ## [0.8.0] - 2026-08-24
 ### Added
 - `--fail-on-overlap` on `compare` and `benchmark-check` for CI/pipelines (exit `2` when overlap is found; report still written; exit `1` remains for I/O errors)
