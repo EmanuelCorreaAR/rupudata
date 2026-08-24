@@ -1,7 +1,5 @@
 # RupuData
 
-**Language:** [English](README.md) | [Español](README.es.md)
-
 **Follow the path of your data.**
 
 RupuData answers an uncomfortable question: **does my training data overlap with data I use to evaluate my model?**
@@ -164,7 +162,7 @@ rupudata scan examples/near_dupes.jsonl --near-duplicate-threshold 0.85
 
 ## Status
 
-`0.7.0` — scan near-duplicate evidence; audit methodology in [`docs/AUDIT.md`](docs/AUDIT.md) ([Español](docs/AUDIT.es.md)).
+`0.7.0` — scan near-duplicate evidence; audit methodology in [`docs/AUDIT.md`](docs/AUDIT.md).
 
 **Not in this release (on purpose):** semantic / paraphrase matching, CI fail gates, streaming multi-GB scans, provenance/license detectors.
 
@@ -182,7 +180,7 @@ python -m build
 
 ## Technical audit contract
 
-Methodology, matching units, and evidence shapes: **[docs/AUDIT.md](docs/AUDIT.md)** ([Español](docs/AUDIT.es.md)).
+Methodology, matching units, and evidence shapes: **[docs/AUDIT.md](docs/AUDIT.md)**.
 
 ## License
 

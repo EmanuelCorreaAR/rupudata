@@ -1,7 +1,5 @@
 # Technical audit contract
 
-**Language:** [English](AUDIT.md) | [Español](AUDIT.es.md)
-
 RupuData JSON reports follow:
 
 ```text
