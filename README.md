@@ -21,10 +21,14 @@ rupudata --help
 rupudata scan dataset.jsonl
 rupudata compare train.jsonl eval.jsonl
 rupudata compare train.jsonl eval.jsonl --text-field question
+rupudata compare train.jsonl eval.jsonl --fail-on-overlap
 rupudata benchmark-check train.jsonl --benchmark gsm8k
+rupudata benchmark-check train.jsonl --benchmark gsm8k --fail-on-overlap
 ```
 
 `compare` defaults to **full records**. Use `--text-field` when only one column should participate in matching.
+
+`--fail-on-overlap` exits **2** when exact or normalized overlap is found (CI gate). Exit **1** is reserved for errors. The JSON report is written either way.
 
 ## Real-world example (GSM8K)
 
@@ -162,11 +166,11 @@ rupudata scan examples/near_dupes.jsonl --near-duplicate-threshold 0.85
 
 ## Status
 
-`0.7.0` — scan near-duplicate evidence; audit methodology in [`docs/AUDIT.md`](docs/AUDIT.md).
+`0.8.0` — `--fail-on-overlap` for CI/pipelines on `compare` and `benchmark-check`.
 
-**Not in this release (on purpose):** semantic / paraphrase matching, CI fail gates, streaming multi-GB scans, provenance/license detectors.
+**Not in this release (on purpose):** semantic / paraphrase matching, streaming multi-GB scans, provenance/license detectors.
 
-**Next:** driven by real usage (likely `--fail-on-overlap` for CI).
+**Next:** driven by real usage.
 
 ## Development
 

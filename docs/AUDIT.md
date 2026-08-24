@@ -43,6 +43,16 @@ Defaults: `rupudata-report.json`, `rupudata-compare.json`, `rupudata-benchmark.j
 
 Evidence documents the **finding** (which rows, which score). It does not embed full record text — open the dataset at those indices to inspect content.
 
+## CI / pipeline exit codes
+
+| Code | Meaning |
+|------|---------|
+| `0` | Success (no policy failure) |
+| `1` | I/O or usage error |
+| `2` | Overlap found with `--fail-on-overlap` (`compare` / `benchmark-check`) |
+
+Without `--fail-on-overlap`, overlap is reported in the JSON/terminal and the process still exits `0`.
+
 ## What “normalized” means (fingerprint + scan exact duplicates)
 
 Policy id: `record_normalized_v1`.

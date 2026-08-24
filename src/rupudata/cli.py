@@ -11,6 +11,7 @@ from rich.console import Console
 from rupudata.analyzers.near_duplicates import NearDuplicateConfig
 from rupudata.comparison.diff import compare_datasets
 from rupudata.contamination.check import check_benchmark
+from rupudata.core.models import BenchmarkCheckReport, CompareReport
 from rupudata.core.scanner import scan_dataset
 from rupudata.reporters.json_report import write_json_report
 from rupudata.reporters.terminal import (
@@ -19,6 +20,10 @@ from rupudata.reporters.terminal import (
     render_terminal,
 )
 
+# Exit codes: 0 ok, 1 I/O or usage error, 2 overlap policy failure (CI gate).
+EXIT_ERROR = 1
+EXIT_OVERLAP = 2
+
 app = typer.Typer(
     name="rupudata",
     help="Local-first CLI for inspecting and auditing AI datasets.",
@@ -26,6 +31,17 @@ app = typer.Typer(
     no_args_is_help=True,
 )
 console = Console(stderr=True)
+
+
+def _compare_has_overlap(report: CompareReport) -> bool:
+    return (
+        report.result.exact_overlap.shared_records > 0
+        or report.result.normalized_overlap.shared_records > 0
+    )
+
+
+def _benchmark_has_overlap(report: BenchmarkCheckReport) -> bool:
+    return report.result.status == "OVERLAP_DETECTED"
 
 
 @app.command("scan")
@@ -80,7 +96,7 @@ def scan(
         report = scan_dataset(path, near_config=config)
     except (FileNotFoundError, ValueError) as exc:
         console.print(f"[red]Error:[/red] {exc}")
-        raise typer.Exit(code=1) from exc
+        raise typer.Exit(code=EXIT_ERROR) from exc
 
     report_path = output or Path("rupudata-report.json")
     written = write_json_report(report, report_path)
@@ -111,6 +127,14 @@ def compare(
             "(unit=field_text). Default: full-record matching."
         ),
     ),
+    fail_on_overlap: bool = typer.Option(
+        False,
+        "--fail-on-overlap",
+        help=(
+            "Exit 2 if exact or normalized overlap is found "
+            "(CI/pipeline gate). Report is still written."
+        ),
+    ),
 ) -> None:
     """Compare two datasets for exact and normalized record overlap."""
     try:
@@ -119,11 +143,21 @@ def compare(
         )
     except (FileNotFoundError, ValueError) as exc:
         console.print(f"[red]Error:[/red] {exc}")
-        raise typer.Exit(code=1) from exc
+        raise typer.Exit(code=EXIT_ERROR) from exc
 
     report_path = output or Path("rupudata-compare.json")
     written = write_json_report(report, report_path)
     render_compare_terminal(report, str(written))
+
+    if fail_on_overlap and _compare_has_overlap(report):
+        exact = report.result.exact_overlap.shared_records
+        normalized = report.result.normalized_overlap.shared_records
+        console.print(
+            f"[red]Overlap detected[/red] "
+            f"(exact={exact}, normalized={normalized}); "
+            f"exiting {EXIT_OVERLAP} (--fail-on-overlap)."
+        )
+        raise typer.Exit(code=EXIT_OVERLAP)
 
 
 @app.command("benchmark-check")
@@ -152,6 +186,14 @@ def benchmark_check(
         help="Max row-pair evidence entries per match mode (exact / normalized).",
         min=1,
     ),
+    fail_on_overlap: bool = typer.Option(
+        False,
+        "--fail-on-overlap",
+        help=(
+            "Exit 2 if OVERLAP_DETECTED "
+            "(CI/pipeline gate). Report is still written."
+        ),
+    ),
 ) -> None:
     """Check text overlap between a dataset and a known benchmark reference."""
     try:
@@ -160,11 +202,21 @@ def benchmark_check(
         )
     except (FileNotFoundError, ValueError) as exc:
         console.print(f"[red]Error:[/red] {exc}")
-        raise typer.Exit(code=1) from exc
+        raise typer.Exit(code=EXIT_ERROR) from exc
 
     report_path = output or Path("rupudata-benchmark.json")
     written = write_json_report(report, report_path)
     render_benchmark_terminal(report, str(written))
+
+    if fail_on_overlap and _benchmark_has_overlap(report):
+        console.print(
+            f"[red]Overlap detected[/red] "
+            f"(status={report.result.status}, "
+            f"exact={report.result.exact_matches}, "
+            f"normalized={report.result.normalized_matches}); "
+            f"exiting {EXIT_OVERLAP} (--fail-on-overlap)."
+        )
+        raise typer.Exit(code=EXIT_OVERLAP)
 
 
 @app.callback()

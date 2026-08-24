@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.8.0] - 2026-08-24
+### Added
+- `--fail-on-overlap` on `compare` and `benchmark-check` for CI/pipelines (exit `2` when overlap is found; report still written; exit `1` remains for I/O errors)
+
 ## [0.7.0] - 2026-08-24
 ### Added
 - Scan near-duplicate **evidence** in the JSON contract: `left` / `right` row indices, `jaccard`, optional `field` (capped by `--max-evidence`)
