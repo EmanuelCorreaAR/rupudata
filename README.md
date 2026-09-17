@@ -188,6 +188,11 @@ python -m build
 
 Methodology, matching units, and evidence shapes: **[docs/AUDIT.md](docs/AUDIT.md)**.
 
+## Apoyar el proyecto
+
+Si RupuData te sirve, podés invitarme un cafecito: [cafecito.app/emacorreadev](https://cafecito.app/emacorreadev)
+
+
 ## License
 
 Apache License 2.0
